@@ -24,6 +24,7 @@ dependencies:
     # brew services start mysql
     - sudo pip install --upgrade pip
     - pip install --upgrade --user --ignore-installed setuptools wheel
+    - pip install --upgrade --user nupic nupic.bindings
     - pip install --use-wheel --user -r requirements.txt  --quiet || exit
 
 compile:
