@@ -171,7 +171,7 @@ layout = Layout(
         range=[0,0.15],
     ),
     yaxis=YAxis(
-        title='Error frequency',
+        title='Frequency of false positives',
         autorange=True,
         titlefont=Font(
             family='',

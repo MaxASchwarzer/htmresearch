@@ -87,7 +87,7 @@ listofNoiseValues = [0.046875, 0.1015625, 0.1484375, 0.203125, 0.25, 0.296875,
 0.3515625, 0.3984375, 0.453125, 0.5, 0.546875, 0.6015625, 0.6484375, 0.703125,
 0.75, 0.796875]
 
-listofNoiseValues_new = listofNoiseValues[2:] + [0.84375, 0.8984375, 0.9453125]
+listofNoiseValues_new = listofNoiseValues[2:] #+ [0.84375, 0.8984375, 0.9453125]
 
 experimental_errors_PM = [2./1000000, 21./1000000, 118./1000000, 564./1000000,
 2229./1000000, 6064./1000000, 13847./1000000, 30885./1000000, 54487./1000000,
@@ -103,7 +103,7 @@ trace7 = Scatter(
     marker=Marker(
       symbol="square",
       size=12,
-      color="rgb(0, 255, 0)",
+      color="rgb(0, 0, 0)",
     ),
     name="P&M-based noise results with l(x) = x^2"
 )
@@ -114,7 +114,7 @@ trace8 = Scatter(
     marker=Marker(
       symbol="triangle",
       size=12,
-      color="rgb(255, 0, 0)",
+      color="rgb(0, 0, 0)",
     ),
     name="theta=8 (new observed)"
 )
@@ -125,7 +125,7 @@ trace9 = Scatter(
     marker=Marker(
       symbol="triangle",
       size=12,
-      color="rgb(255, 0, 0)",
+      color="rgb(0, 0, 0)",
     ),
     name="theta=12 (new observed)"
 )
@@ -136,7 +136,7 @@ trace10 = Scatter(
     marker=Marker(
       symbol="triangle",
       size=12,
-      color="rgb(255, 0, 0)",
+      color="rgb(0, 0, 0)",
     ),
     name="theta=16 (new observed)"
 )
@@ -147,7 +147,7 @@ trace11 = Scatter(
     marker=Marker(
       symbol="square",
       size=12,
-      color="rgb(255, 255, 0)",
+      color="rgb(0, 0, 0)",
     ),
     name="P&M-based noise results with l(x) = x^10"
 )
@@ -165,8 +165,8 @@ trace1 = Scatter(
 )
 
 trace2 = Scatter(
-    y=theoreticalErrorsThreshold8[3:],
-    x=listofNoiseValues[3:],
+    y=theoreticalErrorsThreshold8[6:],
+    x=listofNoiseValues[6:],
     mode="lines",
     line=Line(
         color='rgb(0, 0, 0)',
@@ -191,8 +191,8 @@ trace3 = Scatter(
 )
 
 trace4 = Scatter(
-    y=theoreticalErrorsThreshold12[2:],
-    x=listofNoiseValues[2:],
+    y=theoreticalErrorsThreshold12[4:],
+    x=listofNoiseValues[4:],
     mode="lines",
     line=Line(
         color='rgb(0, 0, 0)',
@@ -228,7 +228,7 @@ trace6 = Scatter(
     name="theta=16 (predicted)"
 )
 
-data = Data([trace1, trace2, trace3, trace4, trace5, trace6, trace8, trace9, trace10])
+data = Data([trace2, trace4, trace6, trace8, trace9, trace10])
 
 layout = Layout(
     title='',
@@ -251,7 +251,7 @@ layout = Layout(
         exponentformat="none",
         dtick=0.1,
         showline=True,
-        range=[0,1],
+        range=[0,0.9],
     ),
     yaxis=YAxis(
         title='Frequency of false negatives',
@@ -272,7 +272,7 @@ layout = Layout(
     ),
     annotations=Annotations([
       Annotation(
-            x=0.583,
+            x=0.703,
             y=0.777,
             xref='x',
             yref='paper',
@@ -292,7 +292,7 @@ layout = Layout(
             opacity=1
         ),
       Annotation(
-            x=0.0993,
+            x=0.22,
             y=0.2398,
             xref='x',
             yref='paper',
@@ -312,7 +312,7 @@ layout = Layout(
             opacity=1
         ),
       Annotation(
-            x=0.156,
+            x=0.2,
             y=0.753,
             xref='x',
             yref='paper',

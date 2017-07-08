@@ -139,7 +139,7 @@ synapses = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30]
 
 trace1 = Scatter(
     y=e1,
-    x=synapses,
+    x=synapses[:10],
     mode = "markers",
     marker=Marker(
       symbol="octagon",
@@ -151,7 +151,7 @@ trace1 = Scatter(
 
 trace1_predicted = Scatter(
     y=e1_predicted,
-    x=synapses,
+    x=synapses[:10],
     mode = "lines",
     line=Line(
         color='rgb(0, 0, 0)',
@@ -163,7 +163,7 @@ trace1_predicted = Scatter(
 
 trace2 = Scatter(
     y=e2,
-    x=synapses,
+    x=synapses[:10],
     mode = "markers",
     marker=Marker(
       symbol="octagon",
@@ -175,7 +175,7 @@ trace2 = Scatter(
 
 trace2_predicted = Scatter(
     y=e2_predicted,
-    x=synapses,
+    x=synapses[:10],
     mode = "lines",
     line=Line(
         color='rgb(0, 0, 0)',
@@ -187,7 +187,7 @@ trace2_predicted = Scatter(
 
 trace4 = Scatter(
     y=e4,
-    x=synapses,
+    x=synapses[:10],
     mode="markers",
     marker=Marker(
       symbol="octagon",
@@ -199,7 +199,7 @@ trace4 = Scatter(
 
 trace4_predicted = Scatter(
     y=e4_predicted,
-    x=synapses,
+    x=synapses[:10],
     mode="lines",
     line=Line(
         color='rgb(0, 0, 0)',
@@ -211,7 +211,7 @@ trace4_predicted = Scatter(
 
 trace5 = Scatter(
     y=e5,
-    x=synapses,
+    x=synapses[:10],
     marker=Marker(
       symbol="octagon",
       size=10,
@@ -223,7 +223,7 @@ trace5 = Scatter(
 
 trace5_predicted = Scatter(
     y=e5_predicted,
-    x=synapses,
+    x=synapses[:10],
     mode="lines",
     line=Line(
         color='rgb(0, 0, 0)',
@@ -255,10 +255,10 @@ layout = Layout(
         ),
         exponentformat="none",
         showline=True,
-        range=[0,30],
+        range=[0,22],
     ),
     yaxis=YAxis(
-        title='Probability of false positives',
+        title='Frequency of false positives',
         type='log',
         exponentformat='power',
         autorange=True,
@@ -276,14 +276,14 @@ layout = Layout(
     ),
     annotations=Annotations([
       Annotation(
-        # arrow -21, 60
-            x=21.64,
-            y=0.32,
+        # arrow -53, 60
+            x=5.885,
+            y=.7665,
             xref='x',
             yref='paper',
             text='$a = 32, n=4000$',
             showarrow=True,
-            ax=-21,
+            ax=-53,
             ay=60,
             font=Font(
                 family='',
@@ -300,14 +300,14 @@ layout = Layout(
         ),
       Annotation(
         # Arrow -89, 72
-            x=19.32,
-            y=0.51,
+            x=11.723,
+            y=0.5696,
             xref='x',
             yref='paper',
             text='$a = 32, n=2000$',
             showarrow=True,
-            ax = -89,
-            ay = 72,
+            ax = -101,
+            ay = 71,
             font=Font(
                 family='',
                 size=24,
@@ -323,8 +323,8 @@ layout = Layout(
         ),
       Annotation(
         # Arrow 42, -46
-            x=19.44,
-            y=0.67,
+            x=14.217,
+            y=0.7334,
             xref='x',
             yref='paper',
             text='$a = 512, n=16000$',
@@ -345,7 +345,7 @@ layout = Layout(
             opacity=1
         ),
       Annotation(
-            x=23.67,
+            x=14.0443,
             y=0.95,
             xref='x',
             yref='paper',

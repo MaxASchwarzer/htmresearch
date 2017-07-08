@@ -154,7 +154,7 @@ trace1_poirazi_mel = Scatter(
     marker=Marker(
       symbol="octagon",
       size=12,
-      color="rgb(255, 0, 0)",
+      color="rgb(0, 0, 0)",
     ),
     name="a=64 (observed)"
 )
@@ -193,7 +193,7 @@ trace3_poirazi_mel = Scatter(
     marker=Marker(
       symbol="octagon",
       size=12,
-      color="rgb(255, 0, 0)",
+      color="rgb(0, 0, 0)",
     ),
     name="a=128 (observed)"
 )
@@ -243,7 +243,7 @@ trace5_poirazi_mel = Scatter(
     marker=Marker(
       symbol="octagon",
       size=12,
-      color="rgb(255, 0, 0)",
+      color="rgb(0, 0, 0)",
     ),
     name="a=256 (observed)"
 )
@@ -274,8 +274,8 @@ trace6_poirazi_mel = Scatter(
     name="a=256 (predicted)"
 )
 
-data = Data([trace1, trace1_poirazi_mel, trace2, trace3, trace3_poirazi_mel, trace4, trace4_poirazi_mel, trace5, trace5_poirazi_mel, trace6, trace6_poirazi_mel])
-
+#data = Data([trace1, trace1_poirazi_mel, trace2, trace3, trace3_poirazi_mel, trace4, trace4_poirazi_mel, trace5, trace5_poirazi_mel, trace6, trace6_poirazi_mel])
+data = Data([trace1_poirazi_mel, trace3_poirazi_mel, trace5_poirazi_mel])
 layout = Layout(
     title='',
     showlegend=False,
@@ -300,7 +300,7 @@ layout = Layout(
         range=[0,4000],
     ),
     yaxis=YAxis(
-        title='Frequency of false positives',
+        title='Binary classification error',
         type='log',
         exponentformat='power',
         autorange=True,
