@@ -232,7 +232,7 @@ class ExtensiveColumnPoolerTest(unittest.TestCase):
   def testLearnTwoObjectsOneCommonPattern(self):
     """
     Same test as before, except the two objects share a pattern
-    Objects: A{P, Q, R, S,T}   B{P, W, X, Y, Z}
+    Objects: A{P, Q, R, S, T}   B{P, W, X, Y, Z}
     """
     self.init()
 
@@ -904,7 +904,7 @@ class ExtensiveColumnPoolerTest(unittest.TestCase):
     self.init(overrides={"lateralInputWidths": [self.inputWidth,
                                                 self.inputWidth,
                                                 self.inputWidth],
-                         "distalSegmentInhibitionFactor": 1.5})
+                         "distalSegmentInhibitionFactor": 0.6667})
 
     patterns = [self.generatePattern() for _ in xrange(3)]
 
@@ -1167,7 +1167,7 @@ class ExtensiveColumnPoolerTest(unittest.TestCase):
   def learn(self,
             feedforwardPatterns,
             lateralPatterns=None,
-            numRepetitions=1,
+            numRepetitions=5,
             randomOrder=True,
             newObject=True):
     """
