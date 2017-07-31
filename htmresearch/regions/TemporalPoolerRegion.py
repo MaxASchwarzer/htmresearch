@@ -27,6 +27,7 @@ from nupic.bindings.regions.PyRegion import PyRegion
 
 from htmresearch.algorithms.union_temporal_pooler import UnionTemporalPooler
 from htmresearch.algorithms.simple_union_pooler import SimpleUnionPooler
+from nupic.bindings.algorithms import SpatialPooler
 from htmresearch.support.union_temporal_pooler_monitor_mixin import (
   UnionTemporalPoolerMonitorMixin)
 
@@ -172,7 +173,7 @@ def _getAdditionalSpecs(poolerClass=_getDefaultPoolerClass(), poolerType="union"
   # Get arguments from spatial pooler constructors, figure out types of
   # variables and populate poolerSpec.
   # This allows setting SP parameters
-  pArgTuples = _buildArgs(_getParentSpatialPoolerClass(poolerType))
+  pArgTuples = _buildArgs(SpatialPooler)
   for argTuple in pArgTuples:
     d = dict(
       description=argTuple[1],
@@ -309,7 +310,7 @@ class TemporalPoolerRegion(PyRegion):
 
     # include parent spatial pooler parameters
     if poolerType == "union" or poolerType == "unionMonitored":
-      pArgTuplesSP = _buildArgs(_getParentSpatialPoolerClass(poolerType), self, kwargs)
+      pArgTuplesSP = _buildArgs(SpatialPooler, self, kwargs)
       # Make a list of automatic pooler arg names for later use
       self._poolerArgNames = [t[0] for t in pArgTuples] + [t[0] for t in pArgTuplesSP]
     else:
@@ -419,7 +420,7 @@ class TemporalPoolerRegion(PyRegion):
       inputs=dict(
         activeCells=dict(
           description="Active cells",
-          dataType="Real32",
+          dataType="UInt32",
           count=0,
           required=True,
           regionLevel=False,
@@ -428,7 +429,7 @@ class TemporalPoolerRegion(PyRegion):
 
         predictedActiveCells=dict(
           description="Predicted Active Cells",
-          dataType="Real32",
+          dataType="UInt32",
           count=0,
           required=True,
           regionLevel=True,
@@ -437,7 +438,7 @@ class TemporalPoolerRegion(PyRegion):
 
         predictedCells=dict(
           description="Predicted Cells",
-          dataType="Real32",
+          dataType="UInt32",
           count=0,
           required=False,
           regionLevel=True,
@@ -446,7 +447,7 @@ class TemporalPoolerRegion(PyRegion):
 
         winnerCells=dict(
           description="Winner Cells",
-          dataType="Real32",
+          dataType="UInt32",
           count=0,
           required=False,
           regionLevel=True,

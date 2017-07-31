@@ -48,7 +48,7 @@ class ApicalTMRegion(PyRegion):
         "activeColumns": {
           "description": ("An array of 0's and 1's representing the active "
                           "minicolumns, i.e. the input to the TemporalMemory"),
-          "dataType": "Real32",
+          "dataType": "UInt32",
           "count": 0,
           "required": True,
           "regionLevel": True,
@@ -57,7 +57,7 @@ class ApicalTMRegion(PyRegion):
         },
         "basalInput": {
           "description": "An array of 0's and 1's representing basal input",
-          "dataType": "Real32",
+          "dataType": "UInt32",
           "count": 0,
           "required": False,
           "regionLevel": True,
@@ -69,7 +69,7 @@ class ApicalTMRegion(PyRegion):
                           "that can be learned on new synapses on basal " +
                           "segments. If this input is a length-0 array, the " +
                           "whole basalInput is used."),
-          "dataType": "Real32",
+          "dataType": "UInt32",
           "count": 0,
           "required": False,
           "regionLevel": True,
@@ -79,7 +79,7 @@ class ApicalTMRegion(PyRegion):
         "apicalInput": {
           "description": "An array of 0's and 1's representing top down input."
           " The input will be provided to apical dendrites.",
-          "dataType": "Real32",
+          "dataType": "UInt32",
           "count": 0,
           "required": False,
           "regionLevel": True,
@@ -91,7 +91,7 @@ class ApicalTMRegion(PyRegion):
                           "that can be learned on new synapses on apical " +
                           "segments. If this input is a length-0 array, the " +
                           "whole apicalInput is used."),
-          "dataType": "Real32",
+          "dataType": "UInt32",
           "count": 0,
           "required": False,
           "regionLevel": True,
@@ -102,7 +102,7 @@ class ApicalTMRegion(PyRegion):
         "predictedCells": {
           "description": ("A binary output containing a 1 for every "
                           "cell that was predicted for this timestep."),
-          "dataType": "Real32",
+          "dataType": "UInt32",
           "count": 0,
           "regionLevel": True,
           "isDefaultOutput": False
@@ -111,7 +111,7 @@ class ApicalTMRegion(PyRegion):
         "predictedActiveCells": {
           "description": ("A binary output containing a 1 for every "
                           "cell that transitioned from predicted to active."),
-          "dataType": "Real32",
+          "dataType": "UInt32",
           "count": 0,
           "regionLevel": True,
           "isDefaultOutput": False
@@ -120,7 +120,7 @@ class ApicalTMRegion(PyRegion):
         "activeCells": {
           "description": ("A binary output containing a 1 for every "
                           "cell that is currently active."),
-          "dataType": "Real32",
+          "dataType": "UInt32",
           "count": 0,
           "regionLevel": True,
           "isDefaultOutput": True
@@ -129,7 +129,7 @@ class ApicalTMRegion(PyRegion):
         "winnerCells": {
           "description": ("A binary output containing a 1 for every "
                           "'winner' cell in the TM."),
-          "dataType": "Real32",
+          "dataType": "UInt32",
           "count": 0,
           "regionLevel": True,
           "isDefaultOutput": False

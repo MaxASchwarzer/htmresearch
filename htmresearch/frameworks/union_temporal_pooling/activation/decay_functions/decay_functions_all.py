@@ -132,4 +132,4 @@ class LogisticDecayFunction(DecayFunctionBase):
     plt.plot(x, y)
     plt.title('Sigmoid Decay Function + Steepness: '+ str(self._steepness))
     plt.xlabel('Time after activation (step)')
-    plt.ylabel('Persistence')    
+    plt.ylabel('Persistence')

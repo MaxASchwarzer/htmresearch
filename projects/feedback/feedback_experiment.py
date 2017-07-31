@@ -264,9 +264,6 @@ class FeedbackExperiment(object):
       random.shuffle(sequence_order)
       for i in sequence_order:
         sequence = sequences[i]
-        # keep track of numbers of iterations to run for this sequence
-        iterations = 0
-
 
         for s in sequence:
           if self.patternMachine is not None:
@@ -274,7 +271,7 @@ class FeedbackExperiment(object):
           self.sensorInputs[0].addDataToQueue(list(s), 0, 0)
           self.network.run(1)
 
-        self.sendReset()
+        #self.sendReset()
 
     self._setLearningMode(l4Learning=False, l2Learning=False)
     self.sendReset()
@@ -411,7 +408,7 @@ class FeedbackExperiment(object):
     """
     Returns the active representation in L2.
     """
-    return [set(column._pooler._getMostActiveCells()) for column in self.L2Columns]
+    return [set(column._pooler._fuzzyGetMostActiveCells()) for column in self.L2Columns]
 
 
   def getDefaultL4Params(self, inputSize):
@@ -430,8 +427,8 @@ class FeedbackExperiment(object):
             "permanenceDecrement": 0.02,
             "reducedBasalThreshold": 10,
             "minThreshold": 13,
-            "basalPredictedSegmentDecrement": 0.00,
-            "apicalPredictedSegmentDecrement": 0.00,
+            "basalPredictedSegmentDecrement": 0.01,
+            "apicalPredictedSegmentDecrement": 0.01,
             "activationThreshold": 15,
             "sampleSize": 60,
             "implementation": "ApicalDependent",
@@ -490,36 +487,37 @@ class FeedbackExperiment(object):
     else:
       # Config field for TPRegion
       UP_PARAMS = {
-          #"spVerbosity": _VERBOSITY,
-          #"columnCount": 128,
           "columnCount": 2048,
-          # This must be set before creating the TPRegion
           "inputWidth": 2048*8,
           "learningMode": 1,
-          #"numActiveColumnsPerInhArea": 20,
-          "numActiveColumnsPerInhArea": 40,
-          "numActive" : 40,
+          "numActive" : 20,
           "seed": 1956,
-          #"stimulusThreshold": 0,
-          "synPermInactiveDec": 0.002,
+          "stimulusThreshold": 0,
+          "inhibitionFactor": 0.8,
+
+          # SP Params
+          "synPermInactiveDec": 0.005,
           "synPermActiveInc": 0.01,
           "synPermPreviousPredActiveInc": 0.005,
           "synPermPredActiveInc": 0.005,
           "synPermConnected": 0.5,
-          "potentialPct": 0.1,
+          "potentialPct": 1.,
 
+          # Distal Params
           "synPermDistalInc": 0.1,
           "synPermDistalDec": 0.02,
           "initialDistalPermanence": 0.51,
           "activationThresholdDistal": 15,
           "sampleSizeDistal": 20,
           "connectedPermanenceDistal": 0.5,
+          "segmentBoost": 1.5,
 
           "globalInhibition": 1,
           "useInternalLateralConnections": 1,
           "minPctOverlapDutyCycle": 0.001,
           "exciteFunctionType": "Fixed",
           "decayFunctionType": "Exponential",
+          "decayTimeConst": 10,
           "historyLength": 10,
           "minHistory": 0,
           "dutyCyclePeriod": 1000,
@@ -527,8 +525,7 @@ class FeedbackExperiment(object):
           "spVerbosity": 0,
           "wrapAround": 1,
           "activeOverlapWeight": 1.0,
-          "predictedActiveOverlapWeight": 1.0,
-          #"fixedPoolingActivationBurst": 0,
+          "predictedActiveOverlapWeight": 3.0,
           "maxUnionActivity": 0.05,
           "poolerType": "union",
       }

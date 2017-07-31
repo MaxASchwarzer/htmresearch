@@ -527,10 +527,10 @@ if __name__ == "__main__":
   plt.ion()
 
 
-  #experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(5,), nbSeeds=8, noiseType="swap", sequenceLen=30, sharedRange=(0,0), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="Prediction performance with swapped stimuli (no shared range)")
-  #experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(5,), nbSeeds=8, noiseType="swap", sequenceLen=30, sharedRange=(5,24), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="Prediction performance with swapped stimuli (shared range)")
-  experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(5,), nbSeeds=8, noiseType="replace", sequenceLen=30, sharedRange=(0,0), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="Prediction performance with randomized stimulus (no shared range)")
-  experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(5,), nbSeeds=8, noiseType="replace", sequenceLen=30, sharedRange=(5,24), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="Prediction performance with randomized stimulus (shared range)")
+  experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(5,), nbSeeds=4, noiseType="swap", sequenceLen=30, sharedRange=(0,0), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="Prediction performance with swapped stimuli (no shared range)")
+  experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(5,), nbSeeds=4, noiseType="swap", sequenceLen=30, sharedRange=(5,24), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="Prediction performance with swapped stimuli (shared range)")
+  experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(5,), nbSeeds=4, noiseType="replace", sequenceLen=30, sharedRange=(0,0), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="Prediction performance with randomized stimulus (no shared range)")
+  experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(5,), nbSeeds=4, noiseType="replace", sequenceLen=30, sharedRange=(5,24), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="Prediction performance with randomized stimulus (shared range)")
 
 
 
@@ -539,8 +539,8 @@ if __name__ == "__main__":
 
 
 
-  #experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(5,), nbSeeds=8, noiseType="repeat", sequenceLen=30, sharedRange=(0,0), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="Prediction performance with repeated stimulus (no shared range)")
-  #experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(5,), nbSeeds=8, noiseType="repeat", sequenceLen=30, sharedRange=(5,24), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="Prediction performance with repeated stimulus (shared range)")
+  experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(5,), nbSeeds=8, noiseType="repeat", sequenceLen=30, sharedRange=(0,0), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="Prediction performance with repeated stimulus (no shared range)")
+  experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(5,), nbSeeds=8, noiseType="repeat", sequenceLen=30, sharedRange=(5,24), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="Prediction performance with repeated stimulus (shared range)")
   # # # Don't use corrspredcorrect with "skip" noise - activities would be fine though.
   # experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(3,), nbSeeds=8, noiseType="skip", sequenceLen=30, sharedRange=(0,0), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="Prediction performance with omitted stimulus (no shared range)")
   # experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(5,), nbSeeds=8, noiseType="skip", sequenceLen=30, sharedRange=(5,24), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="Prediction performance with omitted stimulus (shared range)")
