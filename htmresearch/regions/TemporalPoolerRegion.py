@@ -300,6 +300,7 @@ class TemporalPoolerRegion(PyRegion):
   def __init__(self, columnCount, inputWidth, historyLength,
                minHistory, poolerType, **kwargs):
 
+    import ipdb; ipdb.set_trace()
     if columnCount <= 0 or inputWidth <=0:
       raise TypeError("Parameters columnCount and inputWidth must be > 0")
     # Pull out the pooler arguments automatically
@@ -307,7 +308,7 @@ class TemporalPoolerRegion(PyRegion):
     self._poolerType = poolerType
     self._poolerClass = _getPoolerClass(poolerType)
     pArgTuples = _buildArgs(self._poolerClass, self, kwargs)
-
+    ipdb.set_trace()
     # include parent spatial pooler parameters
     if poolerType == "union" or poolerType == "unionMonitored":
       pArgTuplesSP = _buildArgs(SpatialPooler, self, kwargs)
@@ -334,7 +335,7 @@ class TemporalPoolerRegion(PyRegion):
     """
     Initialize the self._poolerClass
     """
-
+    import ipdb; ipdb.set_trace()
     # Retrieve the necessary extra arguments that were handled automatically
     autoArgs = {name: getattr(self, name) for name in self._poolerArgNames}
     autoArgs["inputDimensions"] = [self._inputWidth]

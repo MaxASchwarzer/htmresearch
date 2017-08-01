@@ -159,7 +159,7 @@ class UnionTemporalPooler(object):
     @param  minHistory don't perform union (output all zeros) until buffer
             length >= minHistory
     """
-
+    import ipdb; ipdb.set_trace()
     self.count = 0
     self.representations = {}
     self.overlaps = []
@@ -184,6 +184,7 @@ class UnionTemporalPooler(object):
       minPctOverlapDutyCycle = minPctOverlapDutyCycle,
       dutyCyclePeriod = dutyCyclePeriod,
       boostStrength = boostStrength,
+      stimulusThreshold = stimulusThreshold,
       spVerbosity = spVerbosity,
       wrapAround = wrapAround)
 
@@ -218,6 +219,7 @@ class UnionTemporalPooler(object):
 
     self._activeOverlapWeight = activeOverlapWeight
     self._inhibitionFactor = 0.8
+    self._stimulusThreshold = stimulusThreshold
     self._predictedActiveOverlapWeight = predictedActiveOverlapWeight
     self._maxUnionActivity = maxUnionActivity
     self._numActive = numActive
@@ -356,7 +358,6 @@ class UnionTemporalPooler(object):
     targetToActivate = max(self._maxUnionCells - len(self._unionSDR), self._numActive)
     activeCells = self._fuzzyInhibitColumnsGlobal(multipliedOverlaps,
                                                   targetToActivate,)
-                                                  #self._inhibitionFactor)
     self._activeCells = activeCells
 
     # Decrement pooling activation of all cells
@@ -366,7 +367,7 @@ class UnionTemporalPooler(object):
     self._addToPoolingActivation(activeCells, overlapsPredictedActive)
 
     # update union SDR
-    self._fuzzyGetMostActiveCells()#self._inhibitionFactor)
+    self._fuzzyGetMostActiveCells()
 
     #if winnerCells is not None:
     #  learningCandidates = winnerCells
@@ -521,6 +522,7 @@ class UnionTemporalPooler(object):
     # Calculate winners using stable sort algorithm (mergesort)
     # for compatibility with C++
     sortedWinnerIndices = numpy.argsort(overlaps, kind='mergesort')
+    sortedOverlaps = overlaps[sortedWinnerIndices]
 
     # Calculate the inhibition threshold
     start = int(len(sortedWinnerIndices) - numActive)
@@ -529,6 +531,11 @@ class UnionTemporalPooler(object):
       return numpy.asarray([], dtype = "uint32")
 
     threshold = numpy.mean(overlaps[winners])*self._inhibitionFactor
+
+    stimulusCutoff = numpy.searchsorted(sortedOverlaps, self._stimulusThreshold)
+    thresholdCutoff = numpy.searchsorted(sortedOverlaps, threshold)
+    cutoff = max(stimulusCutoff, thresholdCutoff)
+    print stimulusCutoff, thresholdCutoff, cutoff
 
     # Determine which other cells will become active
     while start > 0:

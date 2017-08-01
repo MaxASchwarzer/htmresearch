@@ -105,7 +105,7 @@ class FeedbackExperiment(object):
       "L4Params": self.getDefaultL4Params(inputSize),
       "L2Params": self.getDefaultL2Params(inputSize),
     }
-
+    import ipdb; ipdb.set_trace()
     if L2Overrides is not None:
       self.config["L2Params"].update(L2Overrides)
 
@@ -460,76 +460,51 @@ class FeedbackExperiment(object):
     """
     Returns a good default set of parameters to use in the L4 region.
     """
+    # Config field for TPRegion
+    UP_PARAMS = {
+        "columnCount": 2048,
+        "inputWidth": 2048*8,
+        "learningMode": 1,
+        "numActive" : 20,
+        "seed": 1956,
+        "stimulusThreshold": 5,
+        "inhibitionFactor": 0.8,
 
-    if False:
-      return {
-        "cellCount": 2048,
-        "inputWidth": inputSize * 8,
-        "learningMode": True,
-        "sdrSize": 40,
-        "synPermProximalInc": 0.1,
-        "synPermProximalDec": 0.001,
-        "initialProximalPermanence": 0.81,
-        "minThresholdProximal": 27,
-        "sampleSizeProximal": 40,
-        "connectedPermanenceProximal": 0.5,
+        # SP Params
+        "synPermInactiveDec": 0.005,
+        "synPermActiveInc": 0.01,
+        "synPermPreviousPredActiveInc": 0.005,
+        "synPermPredActiveInc": 0.005,
+        "synPermConnected": 0.5,
+        "potentialPct": 1.,
+
+        # Distal Params
         "synPermDistalInc": 0.1,
         "synPermDistalDec": 0.02,
-        "initialDistalPermanence": 0.61,
+        "initialDistalPermanence": 0.51,
         "activationThresholdDistal": 15,
         "sampleSizeDistal": 20,
         "connectedPermanenceDistal": 0.5,
-        "distalSegmentInhibitionFactor": .8,
-        "inertiaFactor": .90,
-        "seed": self.seed,
-      }
+        "segmentBoost": 1.5,
 
-    else:
-      # Config field for TPRegion
-      UP_PARAMS = {
-          "columnCount": 2048,
-          "inputWidth": 2048*8,
-          "learningMode": 1,
-          "numActive" : 20,
-          "seed": 1956,
-          "stimulusThreshold": 0,
-          "inhibitionFactor": 0.8,
-
-          # SP Params
-          "synPermInactiveDec": 0.005,
-          "synPermActiveInc": 0.01,
-          "synPermPreviousPredActiveInc": 0.005,
-          "synPermPredActiveInc": 0.005,
-          "synPermConnected": 0.5,
-          "potentialPct": 1.,
-
-          # Distal Params
-          "synPermDistalInc": 0.1,
-          "synPermDistalDec": 0.02,
-          "initialDistalPermanence": 0.51,
-          "activationThresholdDistal": 15,
-          "sampleSizeDistal": 20,
-          "connectedPermanenceDistal": 0.5,
-          "segmentBoost": 1.5,
-
-          "globalInhibition": 1,
-          "useInternalLateralConnections": 1,
-          "minPctOverlapDutyCycle": 0.001,
-          "exciteFunctionType": "Fixed",
-          "decayFunctionType": "Exponential",
-          "decayTimeConst": 10,
-          "historyLength": 10,
-          "minHistory": 0,
-          "dutyCyclePeriod": 1000,
-          "boostStrength": 0.0,
-          "spVerbosity": 0,
-          "wrapAround": 1,
-          "activeOverlapWeight": 1.0,
-          "predictedActiveOverlapWeight": 3.0,
-          "maxUnionActivity": 0.05,
-          "poolerType": "union",
-      }
-      return UP_PARAMS
+        "globalInhibition": 1,
+        "useInternalLateralConnections": 1,
+        "minPctOverlapDutyCycle": 0.001,
+        "exciteFunctionType": "Fixed",
+        "decayFunctionType": "Exponential",
+        "decayTimeConst": 10,
+        "historyLength": 10,
+        "minHistory": 0,
+        "dutyCyclePeriod": 1000,
+        "boostStrength": 0.0,
+        "spVerbosity": 0,
+        "wrapAround": 1,
+        "activeOverlapWeight": 1.0,
+        "predictedActiveOverlapWeight": 3.0,
+        "maxUnionActivity": 0.02,
+        "poolerType": "union",
+    }
+    return UP_PARAMS
 
   def _setLearningMode(self, l4Learning = False, l2Learning=False):
     """

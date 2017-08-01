@@ -234,8 +234,8 @@ def experimentWrapper(pool, noiseProbas, nbSequences, nbSeeds, noiseType, sequen
       expParams = [(noiseProba, numSequences, seed,
                     noiseType, sequenceLen, sharedRange,
                     noiseRange) for seed in seeds]
-      #metricSets = map(caller, expParams)
-      metricSets = pool.map(caller, expParams)
+      metricSets = map(caller, expParams)
+      #metricSets = pool.map(caller, expParams)
       for metricSet in metricSets:
         dictMerge(metrics, metricSet)
 
