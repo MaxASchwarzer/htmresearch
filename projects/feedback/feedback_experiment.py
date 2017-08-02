@@ -105,7 +105,7 @@ class FeedbackExperiment(object):
       "L4Params": self.getDefaultL4Params(inputSize),
       "L2Params": self.getDefaultL2Params(inputSize),
     }
-    
+
     if L2Overrides is not None:
       self.config["L2Params"].update(L2Overrides)
 
@@ -260,7 +260,7 @@ class FeedbackExperiment(object):
 
     self._setLearningMode(l4Learning=True, l2Learning=True)
     sequence_order = range(len(sequences))
-    for _ in xrange(10):
+    for _ in xrange(5):
       random.shuffle(sequence_order)
       for i in sequence_order:
         sequence = sequences[i]
@@ -270,8 +270,6 @@ class FeedbackExperiment(object):
             s = self.patternMachine.addNoise(s, self.trainingNoiseProb)
           self.sensorInputs[0].addDataToQueue(list(s), 0, 0)
           self.network.run(1)
-
-        #self.sendReset()
 
     self._setLearningMode(l4Learning=False, l2Learning=False)
     self.sendReset()
@@ -464,18 +462,18 @@ class FeedbackExperiment(object):
     UP_PARAMS = {
         "columnCount": 2048,
         "inputWidth": 2048*8,
-        "learningMode": 1,
+        "learningMode": True,
         "numActive" : 20,
         "seed": 1956,
-        "stimulusThreshold": 5,
+        "stimulusThreshold": 0,
         "inhibitionFactor": 0.8,
 
         # SP Params
-        "synPermInactiveDec": 0.005,
-        "synPermActiveInc": 0.01,
-        "synPermPreviousPredActiveInc": 0.005,
-        "synPermPredActiveInc": 0.005,
-        "synPermConnected": 0.5,
+        "synPermInactiveDec": 0.01,
+        "synPermActiveInc": 0.1,
+        "synPermPreviousPredActiveInc": 0.05,
+        "synPermPredActiveInc": 0.05,
+        "synPermConnected": 0.1,
         "potentialPct": 1.,
 
         # Distal Params
@@ -497,11 +495,10 @@ class FeedbackExperiment(object):
         "minHistory": 0,
         "dutyCyclePeriod": 1000,
         "boostStrength": 0.0,
-        "spVerbosity": 0,
         "wrapAround": 1,
         "activeOverlapWeight": 1.0,
         "predictedActiveOverlapWeight": 3.0,
-        "maxUnionActivity": 0.02,
+        "maxUnionActivity": 0.04,
         "poolerType": "union",
     }
     return UP_PARAMS

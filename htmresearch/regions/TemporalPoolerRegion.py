@@ -53,7 +53,6 @@ class TemporalPoolerRegion(PyRegion):
     The parameters collection is constructed based on the parameters specified
     by the various components (tmSpec and otherSpec)
     """
-    
     spec = dict(
       description=TemporalPoolerRegion.__doc__,
       singleNodeOnly=True,
@@ -142,10 +141,10 @@ class TemporalPoolerRegion(PyRegion):
           dataType='UInt32',
           count=1,
           constraints=''),
-        sdrSize=dict(
+        maxUnionActivity=dict(
           description="The number of active cells invoked per object",
           accessMode="Read",
-          dataType="UInt32",
+          dataType="Real32",
           count=1,
           constraints=""),
         columnCount=dict(
@@ -348,10 +347,17 @@ class TemporalPoolerRegion(PyRegion):
           dataType="UInt32",
           count=1,
           constraints=""),
+        minPctOverlapDutyCycle=dict(
+          description="Minimum overlap for duty cycle in boosting",
+          accessMode="Read",
+          dataType="Real32",
+          count=1,
+          constraints=""),
         globalInhibition=dict(
           description="Whether or not the SP should use global inhibition.",
           accessMode="ReadWrite",
           dataType="UInt32",
+          count=1,
           constraints="bool"),
       ),
       commands=dict()
@@ -364,6 +370,7 @@ class TemporalPoolerRegion(PyRegion):
                activeOverlapWeight=1.0,
                predictedActiveOverlapWeight=0.0,
                numActive = 40,
+               columnCount = 2048,
 
                # Distal
                segmentBoost = 1.2,
@@ -388,7 +395,6 @@ class TemporalPoolerRegion(PyRegion):
 
                # Spatial Pooler
                inputWidth = 2048*8,
-               columnDimensions=2048,
                potentialRadius=16,
                potentialPct=0.5,
                globalInhibition=True,
@@ -403,11 +409,13 @@ class TemporalPoolerRegion(PyRegion):
                wrapAround=True,
                #spVersion = "c++",
                seed = 42,
+               learningMode = True,
                **kwargs):
 
     self.activeOverlapWeight = activeOverlapWeight
     self.predictedActiveOverlapWeight = predictedActiveOverlapWeight
     self.numActive  = numActive
+    self.columnCount = columnCount
 
     # Distal
     self.segmentBoost  = segmentBoost
@@ -432,7 +440,6 @@ class TemporalPoolerRegion(PyRegion):
 
     # Spatial Pooler
     self.inputWidth  = inputWidth
-    self.columnDimensions = columnDimensions
     self.potentialRadius = potentialRadius
     self.potentialPct = potentialPct
     self.globalInhibition = globalInhibition
@@ -447,6 +454,7 @@ class TemporalPoolerRegion(PyRegion):
     self.wrapAround = wrapAround
     #self.#spVersion  = spVersion
     self.seed  = seed
+    self.learningMode = learningMode
     self._pooler = None
 
     PyRegion.__init__(self, **kwargs)
@@ -461,6 +469,7 @@ class TemporalPoolerRegion(PyRegion):
         "activeOverlapWeight": self.activeOverlapWeight,
         "predictedActiveOverlapWeight": self.predictedActiveOverlapWeight,
         "numActive": self.numActive,
+        "columnCount": self.columnCount,
         "segmentBoost": self.segmentBoost,
         "lateralInputWidths": self.lateralInputWidths,
         "useInternalLateralConnections": self.useInternalLateralConnections,
@@ -480,7 +489,6 @@ class TemporalPoolerRegion(PyRegion):
         "minHistory": self.minHistory,
         "inhibitionFactor": self.inhibitionFactor,
         "inputWidth": self.inputWidth,
-        "columnDimensions": self.columnDimensions,
         "potentialRadius": self.potentialRadius,
         "potentialPct": self.potentialPct,
         "globalInhibition": self.globalInhibition,
@@ -517,7 +525,7 @@ class TemporalPoolerRegion(PyRegion):
         resetSignal = True
 
     outputs["mostActiveCells"][:] = numpy.zeros(
-                                      self._columnCount, dtype=GetNTAReal())
+                                      self.columnCount, dtype=GetNTAReal())
 
     if "predictedCells" in inputs:
       predictedCells = inputs["predictedCells"]
@@ -529,22 +537,17 @@ class TemporalPoolerRegion(PyRegion):
     else:
       winnerCells = None
 
-    if self._poolerType == "simpleUnion":
-      self._pooler.unionIntoArray(inputs["activeCells"],
-                                  outputs["mostActiveCells"],
-                                  forceOutput = resetSignal)
-    else:
-      predictedActiveCells = inputs["predictedActiveCells"] if (
-        "predictedActiveCells" in inputs) else numpy.zeros(self._inputWidth,
-                                                           dtype=uintDType)
+    predictedActiveCells = inputs["predictedActiveCells"] if (
+      "predictedActiveCells" in inputs) else numpy.zeros(self._inputWidth,
+                                                         dtype=uintDType)
 
-      mostActiveCellsIndices = self._pooler.compute(inputs["activeCells"],
-                                                    predictedActiveCells,
-                                                    self.learningMode,
-                                                    predictedCells,
-                                                    winnerCells)
+    mostActiveCellsIndices = self._pooler.compute(inputs["activeCells"],
+                                                  predictedActiveCells,
+                                                  self.learningMode,
+                                                  predictedCells,
+                                                  winnerCells)
 
-      outputs["mostActiveCells"][mostActiveCellsIndices] = 1
+    outputs["mostActiveCells"][mostActiveCellsIndices] = 1
 
     outputs["currentlyActiveCells"][:] = 0
     outputs["currentlyActiveCells"][self._pooler._getActiveCells()] = 1
@@ -565,16 +568,14 @@ class TemporalPoolerRegion(PyRegion):
     automatically by PyRegion's parameter set mechanism. The ones that need
     special treatment are explicitly handled here.
     """
-    if parameterName in self._poolerArgNames:
-      setattr(self._pooler, parameterName, parameterValue)
-    elif hasattr(self, parameterName):
+    if hasattr(self, parameterName):
       setattr(self, parameterName, parameterValue)
     else:
       raise Exception("Unknown parameter: " + parameterName)
 
 
   def getOutputElementCount(self, name):
-    return self._columnCount
+    return self.columnCount
 
 
   def getParameterArrayCount(self, name, index):

@@ -77,8 +77,8 @@ class UnionTemporalPooler(object):
                inhibitionFactor = 1.,
 
                # Spatial Pooler
-               inputDimensions=(32, 32),
-               columnDimensions=(64, 64),
+               inputWidth=2048*8,
+               columnCount=2048,
                potentialRadius=16,
                potentialPct=0.5,
                globalInhibition=True,
@@ -157,7 +157,6 @@ class UnionTemporalPooler(object):
     @param  minHistory don't perform union (output all zeros) until buffer
             length >= minHistory
     """
-    import ipdb; ipdb.set_trace()
     self.count = 0
     self.representations = {}
     self.overlaps = []
@@ -170,8 +169,8 @@ class UnionTemporalPooler(object):
       raise RuntimeError()
     self.spatialPoolerVersion = SpatialPooler
     self.spatialPooler = SpatialPooler(
-      columnDimensions = columnDimensions,
-      inputDimensions = inputDimensions,
+      columnDimensions = (columnCount,),
+      inputDimensions = (inputWidth,),
       numActiveColumnsPerInhArea = numActive,
       seed = seed,
       synPermInactiveDec = synPermInactiveDec,
@@ -227,8 +226,8 @@ class UnionTemporalPooler(object):
     self._synPermPreviousPredActiveInc = synPermPreviousPredActiveInc
     self._synPermActiveInc = synPermActiveInc
     self._synPermInactiveDec = synPermInactiveDec
-    self._numColumns = numpy.prod(columnDimensions)
-    self._numInputs = numpy.prod(inputDimensions)
+    self._numColumns = columnCount
+    self._numInputs = inputWidth
 
     self.useInternalLateralConnections = useInternalLateralConnections
     self.segmentBoost = segmentBoost
@@ -533,7 +532,6 @@ class UnionTemporalPooler(object):
     stimulusCutoff = numpy.searchsorted(sortedOverlaps, self._stimulusThreshold)
     thresholdCutoff = numpy.searchsorted(sortedOverlaps, threshold)
     cutoff = max(stimulusCutoff, thresholdCutoff)
-    print stimulusCutoff, thresholdCutoff, cutoff
 
     # Determine which other cells will become active
     while start > 0:
