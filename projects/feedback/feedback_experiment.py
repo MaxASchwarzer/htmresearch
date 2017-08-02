@@ -105,7 +105,7 @@ class FeedbackExperiment(object):
       "L4Params": self.getDefaultL4Params(inputSize),
       "L2Params": self.getDefaultL2Params(inputSize),
     }
-    import ipdb; ipdb.set_trace()
+    
     if L2Overrides is not None:
       self.config["L2Params"].update(L2Overrides)
 

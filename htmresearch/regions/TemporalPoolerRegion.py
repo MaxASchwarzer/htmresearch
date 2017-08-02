@@ -31,390 +31,29 @@ from nupic.bindings.algorithms import SpatialPooler
 from htmresearch.support.union_temporal_pooler_monitor_mixin import (
   UnionTemporalPoolerMonitorMixin)
 
-
 class MonitoredUnionTemporalPooler(UnionTemporalPoolerMonitorMixin,
   UnionTemporalPooler): pass
-
-
 
 uintDType = "uint32"
 
 
-
-def _getPoolerClass(name):
-    if name == "union":
-      return UnionTemporalPooler
-    elif name == "unionMonitored":
-      return MonitoredUnionTemporalPooler
-    elif name == "simpleUnion":
-      return SimpleUnionPooler
-    else:
-      raise RuntimeError("Invalid pooling implementation %s. Valid ones are:" +
-        " union, unionMonitored" % (name))
-
-
-def _getParentSpatialPoolerClass(name):
-    """
-    Find the spatial pooler in the parent classes
-    :param name: pooler class name as in _getPoolerClass
-    :return: the parent spatial pooler class
-    """
-    baseClassList = list(_getPoolerClass(name).__bases__)
-    spatialPoolerParent = None
-    while len(baseClassList) > 0 and spatialPoolerParent is None:
-      v = baseClassList.pop()
-      if v.__name__ is "SpatialPooler":
-        spatialPoolerParent = v
-      if v.__name__ is not 'object':
-        baseClassList += list(v.__bases__)
-
-    if spatialPoolerParent is None:
-      raise RuntimeError("Union pooler class does not inherit from "
-                         "spatial pooler class")
-    return spatialPoolerParent
-
-
-def _getDefaultPoolerClass():
-    return UnionTemporalPooler
-
-
-def _buildArgs(poolerClass, self=None, kwargs={}):
-  """
-  Get the default arguments from the function and assign as instance vars.
-
-  Return a list of 3-tuples with (name, description, defaultValue) for each
-    argument to the function.
-
-  Assigns all arguments to the function as instance variables of TemporalPoolerRegion.
-  If the argument was not provided, uses the default value.
-
-  Pops any values from kwargs that go to the function.
-
-  """
-  # Get the name, description, and default value for each argument
-  argTuples = getArgumentDescriptions(poolerClass.__init__)
-  argTuples = argTuples[1:]  # Remove "self"
-
-  # Get the names of the parameters to our own constructor and remove them
-  init = TemporalPoolerRegion.__init__
-  ourArgNames = [t[0] for t in getArgumentDescriptions(init)]
-  # Also remove a few other names that aren't in our constructor but are
-  #  computed automatically
-  ourArgNames += [
-    "inputDimensions",
-  ]
-  for argTuple in argTuples[:]:
-    if argTuple[0] in ourArgNames:
-      argTuples.remove(argTuple)
-
-  # Build the dictionary of arguments
-  if self:
-    for argTuple in argTuples:
-      argName = argTuple[0]
-      if argName in kwargs:
-        # Argument was provided
-        argValue = kwargs.pop(argName)
-      else:
-        # Argument was not provided; use the default value if there is one, and
-        #  raise an exception otherwise
-        if len(argTuple) == 2:
-          # No default value
-          raise TypeError("Must provide value for '%s'" % argName)
-        argValue = argTuple[2]
-      # Set as an instance variable if "self" was passed in
-      setattr(self, argName, argValue)
-
-  return argTuples
-
-
-def _getAdditionalSpecs(poolerClass=_getDefaultPoolerClass(), poolerType="union"):
-  """Build the additional specs in three groups (for the inspector)
-
-  Use the type of the default argument to set the Spec type, defaulting
-  to "Byte" for None and complex types
-
-  Determines the pooler parameters based on the selected implementation.
-  """
-  typeNames = {int: "UInt32", float: "Real32", str: "Byte", bool: "bool",
-               tuple: "tuple"}
-
-  def getArgType(arg):
-    t = typeNames.get(type(arg), "Byte")
-    count = 0 if t == "Byte" else 1
-    if t == "tuple":
-      t = typeNames.get(type(arg[0]), "Byte")
-      count = len(arg)
-    if t == "bool":
-      t = "UInt32"
-    return (t, count)
-
-  def getConstraints(arg):
-    t = typeNames.get(type(arg), "Byte")
-    if t == "Byte":
-      return "multiple"
-    elif t == "bool":
-      return "bool"
-    else:
-      return ""
-
-  # Get arguments from pooler constructors, figure out types of
-  # variables and populate poolerSpec.
-  pArgTuples = _buildArgs(poolerClass)
-  poolerSpec = {}
-  for argTuple in pArgTuples:
-    d = dict(
-      description=argTuple[1],
-      accessMode="ReadWrite",
-      dataType=getArgType(argTuple[2])[0],
-      count=getArgType(argTuple[2])[1],
-      constraints=getConstraints(argTuple[2]))
-    poolerSpec[argTuple[0]] = d
-
-  # Get arguments from spatial pooler constructors, figure out types of
-  # variables and populate poolerSpec.
-  # This allows setting SP parameters
-  pArgTuples = _buildArgs(SpatialPooler)
-  for argTuple in pArgTuples:
-    d = dict(
-      description=argTuple[1],
-      accessMode="ReadWrite",
-      dataType=getArgType(argTuple[2])[0],
-      count=getArgType(argTuple[2])[1],
-      constraints=getConstraints(argTuple[2]))
-    poolerSpec[argTuple[0]] = d
-
-  # Add special parameters that weren't handled automatically
-  # Pooler parameters only
-  poolerSpec.update(dict(
-    columnCount=dict(
-      description="Total number of columns (coincidences).",
-      accessMode="ReadWrite",
-      dataType="UInt32",
-      count=1,
-      constraints=""),
-
-    inputWidth=dict(
-      description="Size of inputs to the UP.",
-      accessMode="ReadWrite",
-      dataType="UInt32",
-      count=1,
-      constraints=""),
-
-    lateralInputWidths=dict(
-      description="Size of lateral input to the UP.",
-      accessMode="ReadWrite",
-      dataType="UInt32",
-      count=0,
-      constraints=""),
-
-    useInternalLateralConnections=dict(
-      description="1 if the pooler is forming internal lateral connections",
-      accessMode="ReadWrite",
-      dataType="UInt32",
-      count=1,
-      constraints="bool"),
-
-    numActive=dict(
-      description="Number of active cells per time step",
-      accessMode="ReadWrite",
-      dataType="UInt32",
-      count=1,
-      constraints=""),
-
-    historyLength=dict(
-      description="The union window length",
-      accessMode="ReadWrite",
-      dataType="UInt32",
-      count=1,
-      constraints=""),
-
-    minHistory=dict(
-      description="don't perform union (output all zeros) until buffer"
-                  " length >= minHistory",
-      accessMode="ReadWrite",
-      dataType="UInt32",
-      count=1,
-      constraints=""),
-
-     poolerType=dict(
-      description="Type of pooler to use: union",
-      accessMode="ReadWrite",
-      dataType="Byte",
-      count=0,
-      constraints="enum: union"),
-     ))
-
-
-  # The last group is for parameters that aren't specific to pooler
-  otherSpec = dict(
-    learningMode=dict(
-      description="1 if the node is learning (default 1).",
-      accessMode="ReadWrite",
-      dataType="UInt32",
-      count=1,
-      constraints="bool"),
-
-    inferenceMode=dict(
-      description="1 if the node outputs current inference (default 1).",
-      accessMode="ReadWrite",
-      dataType="UInt32",
-      count=1,
-      constraints="bool"),
-
-
-
-  )
-
-  return poolerSpec, otherSpec
-
-
-
 class TemporalPoolerRegion(PyRegion):
-
   """
-  TemporalPoolerRegion is designed to implement the pooler compute for a given
-  HTM level.
+  The TemporalPoolerRegion implements an L2 layer within a single cortical column / cortical
+  module.
 
-  Uses a pooler class to do most of the work. This node has just one
-  pooler instance for the enitire level and does *not* support the concept
-  of "baby nodes" within it.
-
-  Automatic parameter handling:
-
-  Parameter names, default values, and descriptions are retrieved automatically
-  from pooler. Thus, there are only a few hardcoded arguments in __init__,
-  and the rest are passed to the appropriate underlying pooler class. The NodeSpec is
-  mostly built automatically from these parameters, too.
-
-  If you add a parameter to pooler, it will be exposed through TemporalPoolerRegion
-  automatically as if it were in TemporalPoolerRegion.__init__, with the right default
-  value. Add an entry in the __init__ docstring for it too, and that will be
-  brought into the NodeSpec. TemporalPoolerRegion will maintain the parameter as its own
-  instance variable and also pass it to pooler. If the parameter is
-  changed, TemporalPoolerRegion will propagate the change.
-
-  If you want to do something different with the parameter, add it as an
-  argument into TemporalPoolerRegion.__init__, which will override all the default handling.
+  The layer supports feed forward (proximal) and lateral inputs.
   """
-
-  def __init__(self, columnCount, inputWidth, historyLength,
-               minHistory, poolerType, **kwargs):
-
-    import ipdb; ipdb.set_trace()
-    if columnCount <= 0 or inputWidth <=0:
-      raise TypeError("Parameters columnCount and inputWidth must be > 0")
-    # Pull out the pooler arguments automatically
-    # These calls whittle down kwargs and create instance variables of TemporalPoolerRegion
-    self._poolerType = poolerType
-    self._poolerClass = _getPoolerClass(poolerType)
-    pArgTuples = _buildArgs(self._poolerClass, self, kwargs)
-    ipdb.set_trace()
-    # include parent spatial pooler parameters
-    if poolerType == "union" or poolerType == "unionMonitored":
-      pArgTuplesSP = _buildArgs(SpatialPooler, self, kwargs)
-      # Make a list of automatic pooler arg names for later use
-      self._poolerArgNames = [t[0] for t in pArgTuples] + [t[0] for t in pArgTuplesSP]
-    else:
-      self._poolerArgNames = [t[0] for t in pArgTuples]
-
-    PyRegion.__init__(self, **kwargs)
-
-    # Defaults for all other parameters
-    self.learningMode = True
-    self.inferenceMode = True
-    self._inputWidth = inputWidth
-    self._columnCount = columnCount
-    self._historyLength = historyLength
-    self._minHistory = minHistory
-
-    # pooler instance
-    self._pooler = None
-
-
-  def initialize(self):
-    """
-    Initialize the self._poolerClass
-    """
-    import ipdb; ipdb.set_trace()
-    # Retrieve the necessary extra arguments that were handled automatically
-    autoArgs = {name: getattr(self, name) for name in self._poolerArgNames}
-    autoArgs["inputDimensions"] = [self._inputWidth]
-    autoArgs["columnDimensions"] = [self._columnCount]
-    autoArgs["potentialRadius"] = self._inputWidth
-    autoArgs["historyLength"] = self._historyLength
-    autoArgs["minHistory"] = self._minHistory
-
-    # Allocate the pooler
-    self._pooler = self._poolerClass(**autoArgs)
-
-
-  def compute(self, inputs, outputs):
-    """
-    Run one iteration of TemporalPoolerRegion's compute.
-
-    Note that if the reset signal is True (1) we assume this iteration
-    represents the *end* of a sequence. The output will contain the pooled
-    representation to this point and any history will then be reset. The output
-    at the next compute will start fresh.
-    """
-
-    resetSignal = False
-    if 'resetIn' in inputs:
-      if len(inputs['resetIn']) != 1:
-        raise Exception("resetIn has invalid length")
-
-      if inputs['resetIn'][0] != 0:
-        resetSignal = True
-
-    outputs["mostActiveCells"][:] = numpy.zeros(
-                                      self._columnCount, dtype=GetNTAReal())
-
-    if "predictedCells" in inputs:
-      predictedCells = inputs["predictedCells"]
-    else:
-      predictedCells = None
-
-    if "winnerCells" in inputs:
-      winnerCells = inputs["winnerCells"]
-    else:
-      winnerCells = None
-
-    if self._poolerType == "simpleUnion":
-      self._pooler.unionIntoArray(inputs["activeCells"],
-                                  outputs["mostActiveCells"],
-                                  forceOutput = resetSignal)
-    else:
-      predictedActiveCells = inputs["predictedActiveCells"] if (
-        "predictedActiveCells" in inputs) else numpy.zeros(self._inputWidth,
-                                                           dtype=uintDType)
-
-      mostActiveCellsIndices = self._pooler.compute(inputs["activeCells"],
-                                                    predictedActiveCells,
-                                                    self.learningMode,
-                                                    predictedCells,
-                                                    winnerCells)
-
-      outputs["mostActiveCells"][mostActiveCellsIndices] = 1
-
-    outputs["currentlyActiveCells"][:] = 0
-    outputs["currentlyActiveCells"][self._pooler._getActiveCells()] = 1
-
-    if resetSignal:
-        self.reset()
-
-
-  def reset(self):
-    """Reset the history of the underlying pooling class."""
-    if self._pooler is not None:
-      self._pooler.reset()
-
 
   @classmethod
-  def getBaseSpec(cls):
-    """Return the base Spec for TemporalPoolerRegion.
-
-    Doesn't include the pooler parameters
+  def getSpec(cls):
     """
+    Return the Spec for TemporalPoolerRegion.
+
+    The parameters collection is constructed based on the parameters specified
+    by the various components (tmSpec and otherSpec)
+    """
+    
     spec = dict(
       description=TemporalPoolerRegion.__doc__,
       singleNodeOnly=True,
@@ -490,27 +129,434 @@ class TemporalPoolerRegion(PyRegion):
           regionLevel=True,
           isDefaultOutput=False),
       ),
+      parameters=dict(
+        learningMode=dict(
+          description="Whether the node is learning (default True).",
+          accessMode="ReadWrite",
+          dataType="Bool",
+          count=1,
+          defaultValue="true"),
+        inputWidth=dict(
+          description='Number of inputs to the layer.',
+          accessMode='Read',
+          dataType='UInt32',
+          count=1,
+          constraints=''),
+        sdrSize=dict(
+          description="The number of active cells invoked per object",
+          accessMode="Read",
+          dataType="UInt32",
+          count=1,
+          constraints=""),
+        columnCount=dict(
+          description="Total number of columns (coincidences).",
+          accessMode="ReadWrite",
+          dataType="UInt32",
+          count=1,
+          constraints=""),
+        lateralInputWidths=dict(
+          description="Size of lateral input to the UP.",
+          accessMode="ReadWrite",
+          dataType="UInt32",
+          count=0,
+          constraints=""),
+        useInternalLateralConnections=dict(
+          description="1 if the pooler is forming internal lateral connections",
+          accessMode="ReadWrite",
+          dataType="UInt32",
+          count=1,
+          constraints="bool"),
+        numActive=dict(
+          description="Number of active cells per time step",
+          accessMode="ReadWrite",
+          dataType="UInt32",
+          count=1,
+          constraints=""),
+        historyLength=dict(
+          description="The union window length",
+          accessMode="ReadWrite",
+          dataType="UInt32",
+          count=1,
+          constraints=""),
+        minHistory=dict(
+          description="don't perform union (output all zeros) until buffer"
+                      " length >= minHistory",
+          accessMode="ReadWrite",
+          dataType="UInt32",
+          count=1,
+          constraints=""),
+        poolerType=dict(
+          description="Type of pooler to use: union",
+          accessMode="ReadWrite",
+          dataType="Byte",
+          count=0,
+          constraints="enum: union"),
 
-      parameters=dict(),
+        #
+        # Proximal
+        #
+        synPermActiveInc=dict(
+          description="Amount by which permanences of proximal synapses are "
+                      "incremented during learning.",
+          accessMode="Read",
+          dataType="Real32",
+          count=1),
+        synPermInactiveDec=dict(
+          description="Amount by which permanences of proximal synapses are "
+                      "decremented during learning.",
+          accessMode="Read",
+          dataType="Real32",
+          count=1),
+        synPermPredActiveInc=dict(
+          description="Amount by which permanences of proximal synapses are "
+                      "incremented when learning predicted active input.",
+          accessMode="Read",
+          dataType="Real32",
+          count=1),
+        synPermPreviousPredActiveInc=dict(
+          description="Amount by which permanences of proximal synapses are "
+                      "incremented to when learning previously active input.",
+          accessMode="Read",
+          dataType="Real32",
+          count=1),
+        potentialPct=dict(
+          description="Fraction of input bits that each cellcan connect to",
+          accessMode="Read",
+          dataType="Real32",
+          count=1,
+          constraints=""),
+        stimulusThreshold=dict(
+          description="If the number of synapses active on a proximal segment "
+                      "is at least this threshold, it can be considered as a "
+                      "candidate active cell",
+          accessMode="Read",
+          dataType="UInt32",
+          count=1,
+          constraints=""),
+        synPermConnected=dict(
+          description="If the permanence value for a synapse is greater "
+                      "than this value, it is said to be connected.",
+          accessMode="Read",
+          dataType="Real32",
+          count=1,
+          constraints=""),
+        activeOverlapWeight=dict(
+          description="Value of each active input bit",
+          accessMode="Read",
+          dataType="Real32",
+          count=1),
+        predictedActiveOverlapWeight=dict(
+          description="Value of each predicted active input bit",
+          accessMode="Read",
+          dataType="Real32",
+          count=1),
+
+        #
+        # Distal
+        #
+        synPermDistalInc=dict(
+          description="Amount by which permanences of synapses are "
+                      "incremented during learning.",
+          accessMode="Read",
+          dataType="Real32",
+          count=1),
+        synPermDistalDec=dict(
+          description="Amount by which permanences of synapses are "
+                      "decremented during learning.",
+          accessMode="Read",
+          dataType="Real32",
+          count=1),
+        initialDistalPermanence=dict(
+          description="Initial permanence of a new synapse.",
+          accessMode="Read",
+          dataType="Real32",
+          count=1,
+          constraints=""),
+        sampleSizeDistal=dict(
+          description="The desired number of active synapses for an active "
+                      "segment.",
+          accessMode="Read",
+          dataType="Int32",
+          count=1),
+        activationThresholdDistal=dict(
+          description="If the number of synapses active on a distal segment is "
+                      "at least this threshold, the segment is considered "
+                      "active",
+          accessMode="Read",
+          dataType="UInt32",
+          count=1,
+          constraints=""),
+        connectedPermanenceDistal=dict(
+          description="If the permanence value for a synapse is greater "
+                      "than this value, it is said to be connected.",
+          accessMode="Read",
+          dataType="Real32",
+          count=1,
+          constraints=""),
+        segmentBoost=dict(
+          description="Controls how powerful a boost each cell gets for having "
+                      "an active segment.  Scales multiplicatively.",
+          accessMode="Read",
+          dataType="Real32",
+          count=1,
+          constraints=""),
+        inhibitionFactor=dict(
+          description="Controls how strongly cells inhibit each other.",
+          accessMode="Read",
+          dataType="Real32",
+          count=1,
+          constraints=""),
+
+        # Misc
+        seed=dict(
+          description="Seed for the random number generator.",
+          accessMode="Read",
+          dataType="UInt32",
+          count=1),
+        wrapAround=dict(
+          description="Seed for the random number generator.",
+          accessMode="Read",
+          dataType="UInt32",
+          count=1),
+        boostStrength=dict(
+          description="Controls how strongly boosting is applied",
+          accessMode="Read",
+          dataType="Real32",
+          count=1,
+          constraints=""),
+        decayFunctionType=dict(
+          description="Type of decay function to use",
+          accessMode="ReadWrite",
+          dataType="Byte",
+          count=0,
+          constraints=""),
+        exciteFunctionType=dict(
+          description="Type of excite function to use",
+          accessMode="ReadWrite",
+          dataType="Byte",
+          count=0,
+          constraints=""),
+        decayTimeConst=dict(
+          description="Controls the timescale on which decay is applied",
+          accessMode="Read",
+          dataType="UInt32",
+          count=1,
+          constraints=""),
+        dutyCyclePeriod=dict(
+          description="The duty cycle used for boosting",
+          accessMode="Read",
+          dataType="UInt32",
+          count=1,
+          constraints=""),
+        globalInhibition=dict(
+          description="Whether or not the SP should use global inhibition.",
+          accessMode="ReadWrite",
+          dataType="UInt32",
+          constraints="bool"),
+      ),
+      commands=dict()
     )
-
     return spec
 
 
-  @classmethod
-  def getSpec(cls):
-    """
-    Return the Spec for TemporalPoolerRegion.
+  def __init__(self,
+               # union_temporal_pooler.py parameters
+               activeOverlapWeight=1.0,
+               predictedActiveOverlapWeight=0.0,
+               numActive = 40,
 
-    The parameters collection is constructed based on the parameters specified
-    by the various components (poolerSpec and otherSpec)
-    """
-    spec = cls.getBaseSpec()
-    p, o = _getAdditionalSpecs()
-    spec["parameters"].update(p)
-    spec["parameters"].update(o)
+               # Distal
+               segmentBoost = 1.2,
+               lateralInputWidths = [],
+               useInternalLateralConnections = False,
+               synPermDistalInc=0.1,
+               synPermDistalDec=0.001,
+               initialDistalPermanence=0.6,
+               sampleSizeDistal=20,
+               activationThresholdDistal=13,
+               connectedPermanenceDistal=0.50,
 
-    return spec
+               exciteFunctionType='Fixed',
+               decayFunctionType='NoDecay',
+               maxUnionActivity=0.20,
+               decayTimeConst=20.0,
+               synPermPredActiveInc=0.0,
+               synPermPreviousPredActiveInc=0.0,
+               historyLength=0,
+               minHistory=0,
+               inhibitionFactor = 1.,
+
+               # Spatial Pooler
+               inputWidth = 2048*8,
+               columnDimensions=2048,
+               potentialRadius=16,
+               potentialPct=0.5,
+               globalInhibition=True,
+               stimulusThreshold=0,
+               synPermInactiveDec=0.008,
+               synPermActiveInc=0.05,
+               synPermConnected=0.10,
+               minPctOverlapDutyCycle=0.001,
+               dutyCyclePeriod=1000,
+               boostStrength=0.0,
+               spVerbosity=0,
+               wrapAround=True,
+               #spVersion = "c++",
+               seed = 42,
+               **kwargs):
+
+    self.activeOverlapWeight = activeOverlapWeight
+    self.predictedActiveOverlapWeight = predictedActiveOverlapWeight
+    self.numActive  = numActive
+
+    # Distal
+    self.segmentBoost  = segmentBoost
+    self.lateralInputWidths  = lateralInputWidths
+    self.useInternalLateralConnections  = useInternalLateralConnections
+    self.synPermDistalInc = synPermDistalInc
+    self.synPermDistalDec = synPermDistalDec
+    self.initialDistalPermanence = initialDistalPermanence
+    self.sampleSizeDistal = sampleSizeDistal
+    self.activationThresholdDistal = activationThresholdDistal
+    self.connectedPermanenceDistal = connectedPermanenceDistal
+
+    self.exciteFunctionType = exciteFunctionType
+    self.decayFunctionType = decayFunctionType
+    self.maxUnionActivity = maxUnionActivity
+    self.decayTimeConst = decayTimeConst
+    self.synPermPredActiveInc = synPermPredActiveInc
+    self.synPermPreviousPredActiveInc = synPermPreviousPredActiveInc
+    self.historyLength = historyLength
+    self.minHistory = minHistory
+    self.inhibitionFactor  = inhibitionFactor
+
+    # Spatial Pooler
+    self.inputWidth  = inputWidth
+    self.columnDimensions = columnDimensions
+    self.potentialRadius = potentialRadius
+    self.potentialPct = potentialPct
+    self.globalInhibition = globalInhibition
+    self.stimulusThreshold = stimulusThreshold
+    self.synPermInactiveDec = synPermInactiveDec
+    self.synPermActiveInc = synPermActiveInc
+    self.synPermConnected = synPermConnected
+    self.minPctOverlapDutyCycle = minPctOverlapDutyCycle
+    self.dutyCyclePeriod = dutyCyclePeriod
+    self.boostStrength = boostStrength
+    self.spVerbosity = spVerbosity
+    self.wrapAround = wrapAround
+    #self.#spVersion  = spVersion
+    self.seed  = seed
+    self._pooler = None
+
+    PyRegion.__init__(self, **kwargs)
+
+
+  def initialize(self):
+    """
+    Initialize the internal objects.
+    """
+    if self._pooler is None:
+      params = {
+        "activeOverlapWeight": self.activeOverlapWeight,
+        "predictedActiveOverlapWeight": self.predictedActiveOverlapWeight,
+        "numActive": self.numActive,
+        "segmentBoost": self.segmentBoost,
+        "lateralInputWidths": self.lateralInputWidths,
+        "useInternalLateralConnections": self.useInternalLateralConnections,
+        "synPermDistalInc": self.synPermDistalInc,
+        "synPermDistalDec": self.synPermDistalDec,
+        "initialDistalPermanence": self.initialDistalPermanence,
+        "sampleSizeDistal": self.sampleSizeDistal,
+        "activationThresholdDistal": self.activationThresholdDistal,
+        "connectedPermanenceDistal": self.connectedPermanenceDistal,
+        "exciteFunctionType": self.exciteFunctionType,
+        "decayFunctionType": self.decayFunctionType,
+        "maxUnionActivity": self.maxUnionActivity,
+        "decayTimeConst": self.decayTimeConst,
+        "synPermPredActiveInc": self.synPermPredActiveInc,
+        "synPermPreviousPredActiveInc": self.synPermPreviousPredActiveInc,
+        "historyLength": self.historyLength,
+        "minHistory": self.minHistory,
+        "inhibitionFactor": self.inhibitionFactor,
+        "inputWidth": self.inputWidth,
+        "columnDimensions": self.columnDimensions,
+        "potentialRadius": self.potentialRadius,
+        "potentialPct": self.potentialPct,
+        "globalInhibition": self.globalInhibition,
+        "stimulusThreshold": self.stimulusThreshold,
+        "synPermInactiveDec": self.synPermInactiveDec,
+        "synPermActiveInc": self.synPermActiveInc,
+        "synPermConnected": self.synPermConnected,
+        "minPctOverlapDutyCycle": self.minPctOverlapDutyCycle,
+        "dutyCyclePeriod": self.dutyCyclePeriod,
+        "boostStrength": self.boostStrength,
+        "spVerbosity": self.spVerbosity,
+        "wrapAround": self.wrapAround,
+        #"spVersion": self.#spVersion,
+        "seed": self.seed
+      }
+      self._pooler = UnionTemporalPooler(**params)
+
+  def compute(self, inputs, outputs):
+    """
+    Run one iteration of TemporalPoolerRegion's compute.
+
+    Note that if the reset signal is True (1) we assume this iteration
+    represents the *end* of a sequence. The output will contain the pooled
+    representation to this point and any history will then be reset. The output
+    at the next compute will start fresh.
+    """
+
+    resetSignal = False
+    if 'resetIn' in inputs:
+      if len(inputs['resetIn']) != 1:
+        raise Exception("resetIn has invalid length")
+
+      if inputs['resetIn'][0] != 0:
+        resetSignal = True
+
+    outputs["mostActiveCells"][:] = numpy.zeros(
+                                      self._columnCount, dtype=GetNTAReal())
+
+    if "predictedCells" in inputs:
+      predictedCells = inputs["predictedCells"]
+    else:
+      predictedCells = None
+
+    if "winnerCells" in inputs:
+      winnerCells = inputs["winnerCells"]
+    else:
+      winnerCells = None
+
+    if self._poolerType == "simpleUnion":
+      self._pooler.unionIntoArray(inputs["activeCells"],
+                                  outputs["mostActiveCells"],
+                                  forceOutput = resetSignal)
+    else:
+      predictedActiveCells = inputs["predictedActiveCells"] if (
+        "predictedActiveCells" in inputs) else numpy.zeros(self._inputWidth,
+                                                           dtype=uintDType)
+
+      mostActiveCellsIndices = self._pooler.compute(inputs["activeCells"],
+                                                    predictedActiveCells,
+                                                    self.learningMode,
+                                                    predictedCells,
+                                                    winnerCells)
+
+      outputs["mostActiveCells"][mostActiveCellsIndices] = 1
+
+    outputs["currentlyActiveCells"][:] = 0
+    outputs["currentlyActiveCells"][self._pooler._getActiveCells()] = 1
+
+    if resetSignal:
+        self.reset()
+
+
+  def reset(self):
+    """Reset the history of the underlying pooling class."""
+    if self._pooler is not None:
+      self._pooler.reset()
 
 
   def setParameter(self, parameterName, index, parameterValue):
