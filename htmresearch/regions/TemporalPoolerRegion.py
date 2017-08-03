@@ -75,6 +75,16 @@ class TemporalPoolerRegion(PyRegion):
           isDefaultInput=False,
           requireSplitterMap=False),
 
+        lateralInput=dict(
+          description="Lateral binary input into this column, presumably from"
+                      " other neighboring columns.",
+          dataType="Real32",
+          count=0,
+          required=False,
+          regionLevel=True,
+          isDefaultInput=False,
+          requireSplitterMap=False),
+
         predictedCells=dict(
           description="Predicted Cells",
           dataType="UInt32",
@@ -123,6 +133,15 @@ class TemporalPoolerRegion(PyRegion):
           isDefaultOutput=True),
         currentlyActiveCells=dict(
           description="Cells in the pooler SDR which became active in the most recent time step",
+          dataType="Real32",
+          count=0,
+          regionLevel=True,
+          isDefaultOutput=False),
+        predictedActiveCells=dict(
+          description="Cells in the pooler SDR which became active in the most "
+                      "recent time step with at least one active lateral "
+                      "segment.  Only includes cells which were not previously "
+                      "active",
           dataType="Real32",
           count=0,
           regionLevel=True,
@@ -436,7 +455,7 @@ class TemporalPoolerRegion(PyRegion):
     self.synPermPreviousPredActiveInc = synPermPreviousPredActiveInc
     self.historyLength = historyLength
     self.minHistory = minHistory
-    self.inhibitionFactor  = inhibitionFactor
+    self.inhibitionFactor = inhibitionFactor
 
     # Spatial Pooler
     self.inputWidth  = inputWidth
@@ -541,16 +560,32 @@ class TemporalPoolerRegion(PyRegion):
       "predictedActiveCells" in inputs) else numpy.zeros(self._inputWidth,
                                                          dtype=uintDType)
 
+
+    if "lateralInput" in inputs:
+      lateralInputs = []
+      current = 0
+      for width in self.lateralInputWidths:
+        rawInput = inputs["lateralInput"][current:width]
+        lateralInputs.append(numpy.asarray(rawInput.nonzero()[0],
+                                           dtype="uint32"))
+      lateralInputs = tuple(lateralInput)
+    else:
+      lateralInputs = ()
+
+
     mostActiveCellsIndices = self._pooler.compute(inputs["activeCells"],
                                                   predictedActiveCells,
                                                   self.learningMode,
                                                   predictedCells,
-                                                  winnerCells)
+                                                  winnerCells,
+                                                  lateralInputs)
 
     outputs["mostActiveCells"][mostActiveCellsIndices] = 1
 
     outputs["currentlyActiveCells"][:] = 0
     outputs["currentlyActiveCells"][self._pooler._getActiveCells()] = 1
+    #outputs["predictedActiveCells"][:] = 0
+    #outputs["predictedActiveCells"][self._pooler._getPredictedActiveCells()] = 1
 
     if resetSignal:
         self.reset()

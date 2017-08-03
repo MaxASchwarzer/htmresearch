@@ -527,14 +527,14 @@ if __name__ == "__main__":
   plt.ion()
 
 
-  experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(5,), nbSeeds=8, noiseType="swap", sequenceLen=30, sharedRange=(5,7), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="Prediction performance with swapped stimuli (no shared range)")
-  experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(5,), nbSeeds=8, noiseType="swap", sequenceLen=30, sharedRange=(10,20), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="Prediction performance with swapped stimuli (shared range)")
-  experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(5,), nbSeeds=8, noiseType="replace", sequenceLen=30, sharedRange=(0,0), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="Prediction performance with randomized stimulus (no shared range)")
-  experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(5,), nbSeeds=8, noiseType="replace", sequenceLen=30, sharedRange=(10,20), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="Prediction performance with randomized stimulus (shared range)")
+  experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(2,), nbSeeds=8, noiseType="swap", sequenceLen=30, sharedRange=(5,7), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="Prediction performance with swapped stimuli (no shared range)")
+  #experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(5,), nbSeeds=8, noiseType="swap", sequenceLen=30, sharedRange=(10,20), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="Prediction performance with swapped stimuli (shared range)")
+  #experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(5,), nbSeeds=8, noiseType="replace", sequenceLen=30, sharedRange=(0,0), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="Prediction performance with randomized stimulus (no shared range)")
+  #experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(5,), nbSeeds=8, noiseType="replace", sequenceLen=30, sharedRange=(10,20), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="Prediction performance with randomized stimulus (shared range)")
 
 
 
-  experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(5,), nbSeeds=8, noiseType="crossover", sequenceLen=30, sharedRange=(10,20), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="End-swapped sequences (shared range)")
+  experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(20,), nbSeeds=8, noiseType="crossover", sequenceLen=30, sharedRange=(10,20), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="End-swapped sequences (shared range)")
   experimentWrapper(pool, noiseProbas=(.1,), nbSequences=(5,), nbSeeds=8, noiseType="crossover", sequenceLen=30, sharedRange=(0,0), noiseRange=(0,30), whichPlot="corrspredcorrect", plotTitle="End-swapped sequences (no shared range)")
 
 

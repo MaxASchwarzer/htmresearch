@@ -61,9 +61,8 @@ class LogisticExciteFunction(ExciteFunctionBase):
     @param currentActivation (numpy array) Current activation levels for each cell
     @param inputs            (numpy array) inputs for each cell
     """
-
     currentActivation += self._minValue + (self._maxValue - self._minValue) / (
-                         1 + numpy.exp(-self._steepness * (inputs - self._xMidpoint)))
+                         1 + numpy.exp(self._steepness * (self._xMidpoint - inputs)))#.view("int32"))))
 
     return currentActivation
 
@@ -116,4 +115,4 @@ class FixedExciteFunction(ExciteFunctionBase):
     y = self.excite(y, x)
     plt.plot(x, y)
     plt.xlabel('Input')
-    plt.ylabel('Persistence')    
+    plt.ylabel('Persistence')

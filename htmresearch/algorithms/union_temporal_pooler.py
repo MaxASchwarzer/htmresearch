@@ -215,7 +215,7 @@ class UnionTemporalPooler(object):
     self._random = Random()
 
     self._activeOverlapWeight = activeOverlapWeight
-    self._inhibitionFactor = 0.8
+    self._inhibitionFactor = inhibitionFactor
     self._stimulusThreshold = stimulusThreshold
     self._predictedActiveOverlapWeight = predictedActiveOverlapWeight
     self._maxUnionActivity = maxUnionActivity
@@ -245,7 +245,7 @@ class UnionTemporalPooler(object):
     if exciteFunctionType == 'Fixed':
       self._exciteFunction = FixedExciteFunction()
     elif exciteFunctionType == 'Logistic':
-      self._exciteFunction = LogisticExciteFunction()
+      self._exciteFunction = LogisticExciteFunction(minValue = 10, xMidpoint=10)
     else:
       raise NotImplementedError('unknown excite function type'+exciteFunctionType)
 
@@ -342,7 +342,7 @@ class UnionTemporalPooler(object):
                     overlapsPredictedActive *
                     self._predictedActiveOverlapWeight).astype(REAL_DTYPE)
 
-    if learn:
+    if learn and self.spatialPooler.getBoostStrength() > 0:
       boostFactors = numpy.zeros(self._numColumns, dtype=REAL_DTYPE)
       self.spatialPooler.getBoostFactors(boostFactors)
       boostedOverlaps = boostFactors * totalOverlap
@@ -364,14 +364,19 @@ class UnionTemporalPooler(object):
     self._addToPoolingActivation(activeCells, overlapsPredictedActive)
 
     # update union SDR
-    self._fuzzyGetMostActiveCells()
+    self._getMostActiveCells()
 
-    #if winnerCells is not None:
-    #  learningCandidates = winnerCells
-    # else:
-    learningCandidates = predictedActiveInput
+    #print max(self._poolingActivation), len(self._unionSDR)
 
-    learningCells = numpy.intersect1d(activeCells, self._unionSDR)
+    #print numpy.mean(self._poolingActivation[self._unionSDR]), numpy.mean(self._poolingActivation)
+    #print self._unionSDR, len(self._unionSDR)
+
+    if winnerCells is not None:
+      learningCandidates = winnerCells
+    else:
+      learningCandidates = predictedActiveInput
+
+    learningCells = activeCells
     if learn:
       # Adapt permanence of connections to the currently active cells.
       self._adaptSynapses(learningCandidates, learningCells, self._synPermActiveInc, self._synPermInactiveDec)
@@ -533,15 +538,7 @@ class UnionTemporalPooler(object):
     thresholdCutoff = numpy.searchsorted(sortedOverlaps, threshold)
     cutoff = max(stimulusCutoff, thresholdCutoff)
 
-    # Determine which other cells will become active
-    while start > 0:
-      i = sortedWinnerIndices[start]
-      if overlaps[i] <= threshold:
-        break
-      else:
-        start -= 1
-
-    return sortedWinnerIndices[start:][::-1]
+    return sortedWinnerIndices[cutoff:][::-1]
 
 
   def _decayPoolingActivation(self):
@@ -572,7 +569,7 @@ class UnionTemporalPooler(object):
     self._poolingTimer[self._poolingTimer >= 0] += 1
 
     # reset pooling timer for active cells
-    self._poolingTimer[activeCells] = 1
+    self._poolingTimer[activeCells] = 2
     self._poolingActivationInitLevel[activeCells] = self._poolingActivation[activeCells]
 
     return self._poolingActivation
@@ -617,21 +614,16 @@ class UnionTemporalPooler(object):
     nonZeroCells = numpy.argwhere(poolingActivation > 0)[:,0]
 
     poolingActivationSubset = poolingActivation[nonZeroCells]
-    sortedActivations = numpy.argsort(poolingActivationSubset)[::-1]
+    sortedActivations = numpy.argsort(poolingActivationSubset)
     potentialUnionSDR = nonZeroCells[sortedActivations]
 
     start = self._maxUnionCells
     winners = sortedActivations[:start]
     threshold = numpy.mean(poolingActivationSubset[winners])*self._inhibitionFactor
-
-    # Determine which other cells will become active
-    while start < len(nonZeroCells):
-      if poolingActivationSubset[sortedActivations[start]] <= threshold:
-        break
-      else:
-        start += 1
-
-    topCells = potentialUnionSDR[0: start]
+    thresholdCutoff = numpy.searchsorted(poolingActivationSubset[sortedActivations], threshold)
+    stimulusCutoff = numpy.searchsorted(poolingActivationSubset[sortedActivations], self._stimulusThreshold)
+    cutoff = max(thresholdCutoff, stimulusCutoff)
+    topCells = potentialUnionSDR[sortedActivations[cutoff:][::-1]]
 
     if max(self._poolingTimer) > self._minHistory:
       self._unionSDR = numpy.sort(topCells).astype(UINT_DTYPE)
