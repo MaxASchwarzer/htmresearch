@@ -78,7 +78,7 @@ class TemporalPoolerRegion(PyRegion):
         lateralInput=dict(
           description="Lateral binary input into this column, presumably from"
                       " other neighboring columns.",
-          dataType="Real32",
+          dataType="UInt32",
           count=0,
           required=False,
           regionLevel=True,
@@ -136,13 +136,13 @@ class TemporalPoolerRegion(PyRegion):
       outputs=dict(
         mostActiveCells=dict(
           description="Most active cells in the pooler SDR having non-zero activation",
-          dataType="Real32",
+          dataType="UInt32",
           count=0,
           regionLevel=True,
           isDefaultOutput=True),
         currentlyActiveCells=dict(
           description="Cells in the pooler SDR which became active in the most recent time step",
-          dataType="Real32",
+          dataType="UInt32",
           count=0,
           regionLevel=True,
           isDefaultOutput=False),
@@ -151,7 +151,7 @@ class TemporalPoolerRegion(PyRegion):
                       "recent time step with at least one active lateral "
                       "segment.  Only includes cells which were not previously "
                       "active",
-          dataType="Real32",
+          dataType="UInt32",
           count=0,
           regionLevel=True,
           isDefaultOutput=False),
@@ -641,7 +641,9 @@ class TemporalPoolerRegion(PyRegion):
         resetSignal = True
 
     outputs["mostActiveCells"][:] = numpy.zeros(
-                                      self.columnCount, dtype=GetNTAReal())
+                                      self.columnCount, dtype=uintDType)
+
+
 
     if "predictedCells" in inputs:
       predictedCells = inputs["predictedCells"]
@@ -669,7 +671,6 @@ class TemporalPoolerRegion(PyRegion):
     else:
       lateralInputs = ()
 
-
     if "apicalInput" in inputs:
       apicalInput = inputs["apicalInput"]
     else:
@@ -686,10 +687,12 @@ class TemporalPoolerRegion(PyRegion):
 
     outputs["mostActiveCells"][mostActiveCellsIndices] = 1
 
-    outputs["currentlyActiveCells"][:] = 0
+    outputs["currentlyActiveCells"][:] = numpy.zeros(
+                                      self.columnCount, dtype=uintDType)
     outputs["currentlyActiveCells"][self._pooler._getActiveCells()] = 1
-    #outputs["predictedActiveCells"][:] = 0
-    #outputs["predictedActiveCells"][self._pooler._getPredictedActiveCells()] = 1
+    outputs["predictedActiveCells"][:] = numpy.zeros(
+                                      self.columnCount, dtype=uintDType)
+    outputs["predictedActiveCells"][self._pooler._getPredictedActiveCells()] = 1
 
     if resetSignal:
         self.reset()

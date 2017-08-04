@@ -185,9 +185,6 @@ class ApicalDependentTemporalMemory(object):
     if apicalGrowthCandidates is None:
       apicalGrowthCandidates = apicalInput
 
-    # Calculate predictions for this timestep
-    #if self.count % 30 == 6:
-    #  import ipdb; ipdb.set_trace()
     (activeApicalSegments,
       matchingApicalSegments,
       apicalPotentialOverlaps) = self._calculateSegmentActivity(

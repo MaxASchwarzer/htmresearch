@@ -215,7 +215,7 @@ class FeedbackExperiment(object):
                      destInput="predictedActiveCells")
         # Link upper L2 feedback to lower L2
         network.link(upperL2ColumnName, L2ColumnName, "UniformLink", "",
-                     srcOutput="mostActiveCells", destInput="lateralInput",
+                     srcOutput="mostActiveCells", destInput="apicalInput",
                      propagationDelay=1)
 
 
@@ -292,6 +292,8 @@ class FeedbackExperiment(object):
             s = self.patternMachine.addNoise(s, self.trainingNoiseProb)
           self.sensorInputs[0].addDataToQueue(list(s), 0, 0)
           self.network.run(1)
+
+      self.sendReset()
 
     self._setLearningMode(l4Learning=False, l2Learning=False)
     self.sendReset()
@@ -495,12 +497,12 @@ class FeedbackExperiment(object):
         "learningMode": True,
         "numActive" : 40,
         "seed": 1956,
-        "stimulusThreshold": 2,
-        "inhibitionFactor": .8,
+        "stimulusThreshold": 5,
+        "inhibitionFactor": 1.,
 
         # SP Params
-        "synPermInactiveDec": 0.01,
-        "synPermActiveInc": 0.1,
+        "synPermInactiveDec": 0.02,
+        "synPermActiveInc": 0.02,
         "synPermPreviousPredActiveInc": 0.1,
         "synPermPredActiveInc": 0.1,
         "synPermConnected": 0.1,
@@ -518,12 +520,12 @@ class FeedbackExperiment(object):
         # Apical Params
         "synPermApicalInc": 0.05,
         "apicalInputWidth": 2048,
-        "synPermApicalDec": 0.001,
-        "initialApicalPermanence": 0.41,
+        "synPermApicalDec": 0.01,
+        "initialApicalPermanence": 0.21,
         "activationThresholdApical": 15,
-        "sampleSizeApical": 20,
+        "sampleSizeApical": 50,
         "connectedPermanenceApical": 0.5,
-        "apicalSegmentBoost": 3.0,
+        "apicalSegmentBoost": 2.0,
 
         "globalInhibition": 1,
         "useInternalLateralConnections": 1,

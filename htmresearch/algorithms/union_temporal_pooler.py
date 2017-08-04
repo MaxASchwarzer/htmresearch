@@ -22,9 +22,6 @@
 import random
 import copy
 import numpy
-from nupic.bindings.algorithms import SpatialPooler
-# Uncomment below line to use python SP
-#from nupic.algorithms.spatial_pooler import SpatialPooler
 from nupic.bindings.math import GetNTAReal, SparseMatrix, Random
 from htmresearch.frameworks.union_temporal_pooling.activation.excite_functions.excite_functions_all import (
   LogisticExciteFunction, FixedExciteFunction)
@@ -108,7 +105,8 @@ class UnionTemporalPooler(object):
     Please see spatial_pooler.py in NuPIC for spatial pooler parameters.
     Although the Union Pooler is not explicitly a subclass of the spatial
     pooler, it is strongly dependent on its behavior, and many of the parameters
-    are unchanged.
+    are unchanged.  Thus, for any parameters not mentioned here, please see the
+    spatial pooler documentation.
 
     Class-specific parameters:
     -------------------------------------
@@ -123,12 +121,21 @@ class UnionTemporalPooler(object):
             become active at each time step.  Serves the same purpose as
             numActiveColumnsPerInhArea in the spatial pooler.
 
-    @param  segmentBoost: A multiplicative weight applied to the activation of
-            each cell, based on how many active distal segments it has.  Should be
-            >=1.  Setting this to 1 makes distal segments have no effect.
+    @param  distalSegmentBoost: A multiplicative weight applied to the
+            activation of each cell, based on how many active distal segments it
+            has.  Should be >=1.  Setting this to 1 makes distal segments have
+            no effect.
+
+    @param  apicalSegmentBoost: A multiplicative weight applied to the
+            activation of each cell, based on whether or not it has apical
+            input.  Should be >=1.  Setting this to 1 makes apical segments have
+            no effect.
 
     @param  lateralInputWidths: A tuple of ints, which indicate the width of all
             lateral input into the pooler (such as from other columns.)
+
+    @param  lateralInputWidths: An int, which indicates the width of the
+            apical input into the pooler.
 
     @param  useInternalLateralConnections: A Boolean, which, if True, causes the
             pooler to form internal lateral connections, which reinforce specific
@@ -153,6 +160,25 @@ class UnionTemporalPooler(object):
     @param  connectedPermanenceDistal (float)
             Permanence required for a distal synapse to be connected
 
+    @param  synPermApicalInc (float)
+            Permanence increment for apical synapses
+
+    @param  synPermApicalDec (float)
+            Permanence decrement for apical synapses
+
+    @param  sampleSizeApical (int)
+            Number of apical synapses a cell should grow to each lateral
+            pattern, or -1 to connect to every active bit
+
+    @param  initialApicalPermanence (float)
+            Initial permanence value for apical synapses
+
+    @param  activationThresholdApical (int)
+            Number of active synapses required to activate an apical segment
+
+    @param  connectedPermanenceApical (float)
+            Permanence required for an apical synapse to be connected
+
     @param  exciteFunction: If fixedPoolingActivationBurst is False,
             this specifies the ExciteFunctionBase used to excite pooling
             activation.
@@ -166,6 +192,9 @@ class UnionTemporalPooler(object):
 
     @param  minHistory don't perform union (output all zeros) until buffer
             length >= minHistory
+
+    @param  spVersion: The version of the spatial pooler to use.  Valid choices
+            are c++ and python.
     """
     self.count = 0
     self.representations = {}
@@ -344,19 +373,21 @@ class UnionTemporalPooler(object):
     @param activeInput            (numpy array) A numpy array of 0's and 1's that comprises the input to the union pooler
     @param predictedActiveInput   (numpy array) A numpy array of 0's and 1's that comprises the correctly predicted input to the union pooler
     @param learn                  (boolean)      A boolean value indicating whether learning should be performed
+    @param predictedCells         (numpy array) A numpy array of 0's and 1's that comprises predicted cells in the layer below the union pooler
+    @param winnerCells            (numpy array) A numpy array of 0's and 1's that comprises winner cells in a TM below the union pooler
+    @param winnerCells            (numpy array) A list of numpy arrays of 0's and 1's that comprise lateral input to the union pooler
+    @param winnerCells            (numpy array) A numpy array of 0's and 1's that comprises apical input to the union pooler
     """
     assert numpy.size(activeInput) == self._numInputs
     assert numpy.size(predictedActiveInput) == self._numInputs
     self.spatialPooler._updateBookeepingVars(learn)
+
+    # Count the number of iterations the pooler has seen.  Useful for debugging.
     self.count += 1
 
     prevActiveCells = copy.deepcopy(self._unionSDR)
 
     overlapsPredictedActive = self.spatialPooler._calculateOverlap(predictedActiveInput)
-    # Compute proximal dendrite overlaps with active and active-predicted inputs
-    if predictedCells is not None and len(predictedCells) > 30:
-      self._poolingTimer += 2
-
     overlapsActive = self.spatialPooler._calculateOverlap(activeInput)
     totalOverlap = (overlapsActive * self._activeOverlapWeight +
                     overlapsPredictedActive *
@@ -446,13 +477,27 @@ class UnionTemporalPooler(object):
     if self._historyLength > 0:
       self._preLearningCandidates[:, 0] = learningCandidates
 
+
+    # this print command is useful for monitoring the stability of the
+    # representations being formed.  It prints out the Jaccard similarity
+    # of the previous representation and the current one.  Ideally, this should
+    # be close to 1 in most cases in the upper layer and during common motifs
+    # in the lower layers.
+    if len(numpy.union1d(prevActiveCells, self._unionSDR)) > 0:
+      #if len(activeInput) == 2048:
+      #  print "Upper consistency metric is:", (0. + len(numpy.intersect1d(prevActiveCells, self._unionSDR)))/len(numpy.union1d(prevActiveCells, self._unionSDR)), len(self._unionSDR)
+      if len(activeInput) == 2048*8:
+        print "Lower pooler's consistency metric at {} is:".format(self.count), (0. + len(numpy.intersect1d(prevActiveCells, self._unionSDR)))/len(numpy.union1d(prevActiveCells, self._unionSDR)), len(self._unionSDR)
+
+
     return self._unionSDR
 
 
   def _computeApicalDistal(self, lateralInputs, prevActiveCells, apicalInput):
     """
-    Computes overall impact of distal segments for each cell.  Returns a vector
-    of distal multipliers, which can be directly multiplied with overlap scores
+    Computes overall impact of distal and apical segments for each cell.
+    Returns a vector of multipliers, which can be directly multiplied
+    with overlap scores to modulate cell activity.a
     """
     # Calculate the number of active segments on each cell
     numActiveDistalSegmentsByCell = numpy.zeros(self._numColumns, dtype="int")
@@ -467,7 +512,7 @@ class UnionTemporalPooler(object):
       numActiveDistalSegmentsByCell[overlaps >= self.activationThresholdDistal] += 1
     if apicalInput is not None:
       overlaps = self.apicalPermanences.rightVecSumAtNZGteThresholdSparse(
-        lateralInput, self.connectedPermanenceApical)
+        apicalInput, self.connectedPermanenceApical)
       numActiveApicalSegmentsByCell[overlaps >= self.activationThresholdApical] += 1
 
     distalMultipliers = numpy.full(self._numColumns, self.distalSegmentBoost)
@@ -564,11 +609,8 @@ class UnionTemporalPooler(object):
     if len(winners) == 0:
       return numpy.asarray([], dtype = "uint32")
 
-    threshold = numpy.mean(overlaps[winners])*self._inhibitionFactor
-
-    stimulusCutoff = numpy.searchsorted(sortedOverlaps, self._stimulusThreshold)
-    thresholdCutoff = numpy.searchsorted(sortedOverlaps, threshold)
-    cutoff = max(stimulusCutoff, thresholdCutoff)
+    threshold = max(overlaps[start]*self._inhibitionFactor, self._stimulusThreshold)
+    cutoff = numpy.searchsorted(sortedOverlaps, threshold, side = "right")
 
     return sortedWinnerIndices[cutoff:][::-1]
 
@@ -642,7 +684,10 @@ class UnionTemporalPooler(object):
   def _fuzzyGetMostActiveCells(self):
     """
     Gets the most active cells in the Union SDR having at least non-zero
-    activation in sorted order.
+    activation in sorted order, but in a "fuzzy" manner.  Cells within
+    _inhibitionFactor of the lowest cell in the default SDR are eligible to
+    become active, but cells with too little activation will never become active
+    at all, even if there are relatively few other cells competing with them.
     @return: a list of cell indices
     """
     poolingActivation = self._poolingActivation
@@ -657,10 +702,8 @@ class UnionTemporalPooler(object):
 
     start = max(0, len(potentialUnionSDR) - self._maxUnionCells)
     topCells = potentialUnionSDR[start:]
-    threshold = numpy.mean(poolingActivation[topCells])
-    thresholdCutoff = numpy.searchsorted(sortedActivations, threshold, side="right")
-    stimulusCutoff = numpy.searchsorted(sortedActivations, self._stimulusThreshold, side="right")
-    cutoff = max(stimulusCutoff, thresholdCutoff)
+    threshold = max(poolingActivation[start]*self._inhibitionFactor, self._stimulusThreshold)
+    cutoff = numpy.searchsorted(sortedActivations, threshold, side="right")
     unionSDR = potentialUnionSDR[cutoff:]
 
     if max(self._poolingTimer) > self._minHistory:
