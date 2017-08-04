@@ -85,6 +85,15 @@ class TemporalPoolerRegion(PyRegion):
           isDefaultInput=False,
           requireSplitterMap=False),
 
+        apicalInput=dict(
+          description="apical feedback input",
+          dataType="UInt32",
+          count=0,
+          required=False,
+          regionLevel=True,
+          isDefaultInput=False,
+          requireSplitterMap=False),
+
         predictedCells=dict(
           description="Predicted Cells",
           dataType="UInt32",
@@ -168,6 +177,12 @@ class TemporalPoolerRegion(PyRegion):
           constraints=""),
         columnCount=dict(
           description="Total number of columns (coincidences).",
+          accessMode="ReadWrite",
+          dataType="UInt32",
+          count=1,
+          constraints=""),
+        apicalInputWidth=dict(
+          description="Size of apical input to the UP.",
           accessMode="ReadWrite",
           dataType="UInt32",
           count=1,
@@ -311,13 +326,65 @@ class TemporalPoolerRegion(PyRegion):
           dataType="Real32",
           count=1,
           constraints=""),
-        segmentBoost=dict(
+        distalSegmentBoost=dict(
           description="Controls how powerful a boost each cell gets for having "
                       "an active segment.  Scales multiplicatively.",
           accessMode="Read",
           dataType="Real32",
           count=1,
           constraints=""),
+
+
+        # Apical
+        synPermApicalInc=dict(
+          description="Amount by which permanences of synapses are "
+                      "incremented during learning.",
+          accessMode="Read",
+          dataType="Real32",
+          count=1),
+        synPermApicalDec=dict(
+          description="Amount by which permanences of synapses are "
+                      "decremented during learning.",
+          accessMode="Read",
+          dataType="Real32",
+          count=1),
+        initialApicalPermanence=dict(
+          description="Initial permanence of a new synapse.",
+          accessMode="Read",
+          dataType="Real32",
+          count=1,
+          constraints=""),
+        sampleSizeApical=dict(
+          description="The desired number of active synapses for an active "
+                      "segment.",
+          accessMode="Read",
+          dataType="Int32",
+          count=1),
+        activationThresholdApical=dict(
+          description="If the number of synapses active on a distal segment is "
+                      "at least this threshold, the segment is considered "
+                      "active",
+          accessMode="Read",
+          dataType="UInt32",
+          count=1,
+          constraints=""),
+        connectedPermanenceApical=dict(
+          description="If the permanence value for a synapse is greater "
+                      "than this value, it is said to be connected.",
+          accessMode="Read",
+          dataType="Real32",
+          count=1,
+          constraints=""),
+        apicalSegmentBoost=dict(
+          description="Controls how powerful a boost each cell gets for having "
+                      "an active segment.  Scales multiplicatively.",
+          accessMode="Read",
+          dataType="Real32",
+          count=1,
+          constraints=""),
+
+
+
         inhibitionFactor=dict(
           description="Controls how strongly cells inhibit each other.",
           accessMode="Read",
@@ -392,7 +459,7 @@ class TemporalPoolerRegion(PyRegion):
                columnCount = 2048,
 
                # Distal
-               segmentBoost = 1.2,
+               distalSegmentBoost = 1.2,
                lateralInputWidths = [],
                useInternalLateralConnections = False,
                synPermDistalInc=0.1,
@@ -401,6 +468,16 @@ class TemporalPoolerRegion(PyRegion):
                sampleSizeDistal=20,
                activationThresholdDistal=13,
                connectedPermanenceDistal=0.50,
+
+               # Apical
+               apicalSegmentBoost=2.5,
+               apicalInputWidth=None,
+               synPermApicalInc=0.1,
+               synPermApicalDec=0.001,
+               initialApicalPermanence=0.6,
+               sampleSizeApical=20,
+               activationThresholdApical=13,
+               connectedPermanenceApical=0.50,
 
                exciteFunctionType='Fixed',
                decayFunctionType='NoDecay',
@@ -437,7 +514,7 @@ class TemporalPoolerRegion(PyRegion):
     self.columnCount = columnCount
 
     # Distal
-    self.segmentBoost  = segmentBoost
+    self.distalSegmentBoost  = distalSegmentBoost
     self.lateralInputWidths  = lateralInputWidths
     self.useInternalLateralConnections  = useInternalLateralConnections
     self.synPermDistalInc = synPermDistalInc
@@ -446,6 +523,16 @@ class TemporalPoolerRegion(PyRegion):
     self.sampleSizeDistal = sampleSizeDistal
     self.activationThresholdDistal = activationThresholdDistal
     self.connectedPermanenceDistal = connectedPermanenceDistal
+
+    # Apical
+    self.apicalInputWidth  = apicalInputWidth
+    self.synPermApicalInc = synPermApicalInc
+    self.synPermApicalDec = synPermApicalDec
+    self.initialApicalPermanence = initialApicalPermanence
+    self.sampleSizeApical = sampleSizeApical
+    self.activationThresholdApical = activationThresholdApical
+    self.connectedPermanenceApical = connectedPermanenceApical
+    self.apicalSegmentBoost  = apicalSegmentBoost
 
     self.exciteFunctionType = exciteFunctionType
     self.decayFunctionType = decayFunctionType
@@ -489,7 +576,7 @@ class TemporalPoolerRegion(PyRegion):
         "predictedActiveOverlapWeight": self.predictedActiveOverlapWeight,
         "numActive": self.numActive,
         "columnCount": self.columnCount,
-        "segmentBoost": self.segmentBoost,
+        "distalSegmentBoost": self.distalSegmentBoost,
         "lateralInputWidths": self.lateralInputWidths,
         "useInternalLateralConnections": self.useInternalLateralConnections,
         "synPermDistalInc": self.synPermDistalInc,
@@ -498,6 +585,16 @@ class TemporalPoolerRegion(PyRegion):
         "sampleSizeDistal": self.sampleSizeDistal,
         "activationThresholdDistal": self.activationThresholdDistal,
         "connectedPermanenceDistal": self.connectedPermanenceDistal,
+
+        "apicalSegmentBoost": self.apicalSegmentBoost,
+        "synPermApicalInc": self.synPermApicalInc,
+        "synPermApicalDec": self.synPermApicalDec,
+        "initialApicalPermanence": self.initialApicalPermanence,
+        "sampleSizeApical": self.sampleSizeApical,
+        "apicalInputWidth": self.apicalInputWidth,
+        "activationThresholdApical": self.activationThresholdApical,
+        "connectedPermanenceApical": self.connectedPermanenceApical,
+
         "exciteFunctionType": self.exciteFunctionType,
         "decayFunctionType": self.decayFunctionType,
         "maxUnionActivity": self.maxUnionActivity,
@@ -568,9 +665,15 @@ class TemporalPoolerRegion(PyRegion):
         rawInput = inputs["lateralInput"][current:width]
         lateralInputs.append(numpy.asarray(rawInput.nonzero()[0],
                                            dtype="uint32"))
-      lateralInputs = tuple(lateralInput)
+      lateralInputs = tuple(lateralInputs)
     else:
       lateralInputs = ()
+
+
+    if "apicalInput" in inputs:
+      apicalInput = inputs["apicalInput"]
+    else:
+      apicalInput = None
 
 
     mostActiveCellsIndices = self._pooler.compute(inputs["activeCells"],
@@ -578,7 +681,8 @@ class TemporalPoolerRegion(PyRegion):
                                                   self.learningMode,
                                                   predictedCells,
                                                   winnerCells,
-                                                  lateralInputs)
+                                                  lateralInputs,
+                                                  apicalInput)
 
     outputs["mostActiveCells"][mostActiveCellsIndices] = 1
 

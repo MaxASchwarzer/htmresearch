@@ -53,18 +53,28 @@ class UnionTemporalPooler(object):
                # union_temporal_pooler.py parameters
                activeOverlapWeight=1.0,
                predictedActiveOverlapWeight=0.0,
-               numActive = 40,
+               numActive=40,
 
                # Distal
-               segmentBoost = 1.2,
-               lateralInputWidths = [],
-               useInternalLateralConnections = False,
+               distalSegmentBoost=1.2,
+               lateralInputWidths=[],
+               useInternalLateralConnections = True,
                synPermDistalInc=0.1,
                synPermDistalDec=0.001,
                initialDistalPermanence=0.6,
                sampleSizeDistal=20,
                activationThresholdDistal=13,
                connectedPermanenceDistal=0.50,
+
+               # Apical
+               apicalSegmentBoost=2.5,
+               apicalInputWidth=None,
+               synPermApicalInc=0.1,
+               synPermApicalDec=0.001,
+               initialApicalPermanence=0.6,
+               sampleSizeApical=20,
+               activationThresholdApical=13,
+               connectedPermanenceApical=0.50,
 
                exciteFunctionType='Fixed',
                decayFunctionType='NoDecay',
@@ -93,7 +103,7 @@ class UnionTemporalPooler(object):
                wrapAround=True,
                spVersion = "c++",
 
-               seed = 42):
+               seed=42):
     """
     Please see spatial_pooler.py in NuPIC for spatial pooler parameters.
     Although the Union Pooler is not explicitly a subclass of the spatial
@@ -230,13 +240,21 @@ class UnionTemporalPooler(object):
     self._numInputs = inputWidth
 
     self.useInternalLateralConnections = useInternalLateralConnections
-    self.segmentBoost = segmentBoost
+    self.distalSegmentBoost = distalSegmentBoost
     self.synPermDistalInc = synPermDistalInc
     self.synPermDistalDec = synPermDistalDec
     self.initialDistalPermanence = initialDistalPermanence
     self.connectedPermanenceDistal = connectedPermanenceDistal
     self.sampleSizeDistal = sampleSizeDistal
     self.activationThresholdDistal = activationThresholdDistal
+
+    self.apicalSegmentBoost = apicalSegmentBoost
+    self.synPermApicalInc = synPermApicalInc
+    self.synPermApicalDec = synPermApicalDec
+    self.initialApicalPermanence = initialApicalPermanence
+    self.sampleSizeApical = sampleSizeApical
+    self.activationThresholdApical = activationThresholdApical
+    self.connectedPermanenceApical = connectedPermanenceApical
 
     self._historyLength = historyLength
     self._minHistory = minHistory
@@ -245,7 +263,7 @@ class UnionTemporalPooler(object):
     if exciteFunctionType == 'Fixed':
       self._exciteFunction = FixedExciteFunction()
     elif exciteFunctionType == 'Logistic':
-      self._exciteFunction = LogisticExciteFunction(minValue = 10, xMidpoint=10)
+      self._exciteFunction = LogisticExciteFunction(minValue = 1.5*stimulusThreshold, xMidpoint=10)
     else:
       raise NotImplementedError('unknown excite function type'+exciteFunctionType)
 
@@ -292,6 +310,8 @@ class UnionTemporalPooler(object):
       self.internalDistalPermanences = SparseMatrix(self._numColumns, self._numColumns)
     self.distalPermanences = tuple(SparseMatrix(self._numColumns, n)
                                    for n in lateralInputWidths)
+    if apicalInputWidth is not None:
+      self.apicalPermanences = SparseMatrix(self._numColumns, apicalInputWidth)
 
 
 
@@ -317,7 +337,8 @@ class UnionTemporalPooler(object):
 
 
   def compute(self, activeInput, predictedActiveInput, learn,
-              predictedCells = None, winnerCells = None, lateralInputs = (),):
+              predictedCells = None, winnerCells = None, lateralInputs = (),
+              apicalInput = None,):
     """
     Computes one cycle of the Union Temporal Pooler algorithm.
     @param activeInput            (numpy array) A numpy array of 0's and 1's that comprises the input to the union pooler
@@ -330,7 +351,6 @@ class UnionTemporalPooler(object):
     self.count += 1
 
     prevActiveCells = copy.deepcopy(self._unionSDR)
-
 
     overlapsPredictedActive = self.spatialPooler._calculateOverlap(predictedActiveInput)
     # Compute proximal dendrite overlaps with active and active-predicted inputs
@@ -349,7 +369,7 @@ class UnionTemporalPooler(object):
     else:
       boostedOverlaps = totalOverlap
 
-    segmentMultipliers = self._computeDistal(lateralInputs, self._unionSDR)
+    segmentMultipliers = self._computeApicalDistal(lateralInputs, self._unionSDR, apicalInput)
     multipliedOverlaps = segmentMultipliers * boostedOverlaps
 
     targetToActivate = max(self._maxUnionCells - len(self._unionSDR), self._numActive)
@@ -357,26 +377,24 @@ class UnionTemporalPooler(object):
                                                   targetToActivate,)
     self._activeCells = activeCells
 
+    newlyActiveCells = numpy.setdiff1d(activeCells, prevActiveCells)
+    self.predictedActiveCells = newlyActiveCells[segmentMultipliers[newlyActiveCells] > 1]
+
     # Decrement pooling activation of all cells
     self._decayPoolingActivation()
 
     # Update the poolingActivation of current active Union Temporal Pooler cells
     self._addToPoolingActivation(activeCells, overlapsPredictedActive)
 
-    # update union SDR
-    self._getMostActiveCells()
-
-    #print max(self._poolingActivation), len(self._unionSDR)
-
-    #print numpy.mean(self._poolingActivation[self._unionSDR]), numpy.mean(self._poolingActivation)
-    #print self._unionSDR, len(self._unionSDR)
+    self._fuzzyGetMostActiveCells()
 
     if winnerCells is not None:
       learningCandidates = winnerCells
     else:
       learningCandidates = predictedActiveInput
 
-    learningCells = activeCells
+    learningCells = numpy.intersect1d(activeCells, self._unionSDR)
+
     if learn:
       # Adapt permanence of connections to the currently active cells.
       self._adaptSynapses(learningCandidates, learningCells, self._synPermActiveInc, self._synPermInactiveDec)
@@ -395,6 +413,13 @@ class UnionTemporalPooler(object):
                     self.sampleSizeDistal, self.initialDistalPermanence,
                     self.synPermDistalInc, self.synPermDistalDec,
                     self.connectedPermanenceDistal)
+
+      if apicalInput is not None:
+        self._learn(self.apicalPermanences, self._random,
+                    learningCells, prevActiveCells, prevActiveCells,
+                    self.sampleSizeApical, self.initialApicalPermanence,
+                    self.synPermApicalInc, self.synPermApicalDec,
+                    self.connectedPermanenceApical)
 
       # Increase permanence of connections from predicted active inputs to cells in the union SDR
       # This is Hebbian learning applied to the current time step
@@ -424,24 +449,31 @@ class UnionTemporalPooler(object):
     return self._unionSDR
 
 
-  def _computeDistal(self, lateralInputs, prevActiveCells):
+  def _computeApicalDistal(self, lateralInputs, prevActiveCells, apicalInput):
     """
     Computes overall impact of distal segments for each cell.  Returns a vector
     of distal multipliers, which can be directly multiplied with overlap scores
     """
     # Calculate the number of active segments on each cell
-    numActiveSegmentsByCell = numpy.zeros(self._numColumns, dtype="int")
+    numActiveDistalSegmentsByCell = numpy.zeros(self._numColumns, dtype="int")
+    numActiveApicalSegmentsByCell = numpy.zeros(self._numColumns, dtype="int")
     if self.useInternalLateralConnections:
       overlaps = self.internalDistalPermanences.rightVecSumAtNZGteThresholdSparse(
         prevActiveCells, self.connectedPermanenceDistal)
-      numActiveSegmentsByCell[overlaps >= self.activationThresholdDistal] += 1
+      numActiveDistalSegmentsByCell[overlaps >= self.activationThresholdDistal] += 1
     for i, lateralInput in enumerate(lateralInputs):
       overlaps = self.distalPermanences[i].rightVecSumAtNZGteThresholdSparse(
         lateralInput, self.connectedPermanenceDistal)
-      numActiveSegmentsByCell[overlaps >= self.activationThresholdDistal] += 1
+      numActiveDistalSegmentsByCell[overlaps >= self.activationThresholdDistal] += 1
+    if apicalInput is not None:
+      overlaps = self.apicalPermanences.rightVecSumAtNZGteThresholdSparse(
+        lateralInput, self.connectedPermanenceApical)
+      numActiveApicalSegmentsByCell[overlaps >= self.activationThresholdApical] += 1
 
-    distalMultipliers = numpy.full(self._numColumns, self.segmentBoost)
-    return distalMultipliers ** numActiveSegmentsByCell
+    distalMultipliers = numpy.full(self._numColumns, self.distalSegmentBoost)
+    apicalMultipliers = numpy.full(self._numColumns, self.apicalSegmentBoost)
+
+    return (distalMultipliers ** numActiveDistalSegmentsByCell) * (apicalMultipliers ** numActiveApicalSegmentsByCell)
 
 
   @staticmethod
@@ -578,6 +610,9 @@ class UnionTemporalPooler(object):
   def _getActiveCells(self):
     return self._activeCells
 
+  def _getPredictedActiveCells(self):
+    return self.predictedActiveCells
+
 
   def _getMostActiveCells(self):
     """
@@ -603,30 +638,33 @@ class UnionTemporalPooler(object):
     return self._unionSDR
 
 
+
   def _fuzzyGetMostActiveCells(self):
     """
     Gets the most active cells in the Union SDR having at least non-zero
-    activation in sorted order.  However, uses fuzzy inhibition, so cells with
-    activations close to the threshold will also be included.
+    activation in sorted order.
     @return: a list of cell indices
     """
     poolingActivation = self._poolingActivation
     nonZeroCells = numpy.argwhere(poolingActivation > 0)[:,0]
 
-    poolingActivationSubset = poolingActivation[nonZeroCells]
-    sortedActivations = numpy.argsort(poolingActivationSubset)
-    potentialUnionSDR = nonZeroCells[sortedActivations]
+    # include a tie-breaker before sorting
+    poolingActivationSubset = poolingActivation[nonZeroCells] + \
+                              self._poolingActivation_tieBreaker[nonZeroCells]
+    sortIndices = numpy.argsort(poolingActivationSubset)
+    potentialUnionSDR = nonZeroCells[sortIndices]
+    sortedActivations = poolingActivationSubset[sortIndices]
 
-    start = self._maxUnionCells
-    winners = sortedActivations[:start]
-    threshold = numpy.mean(poolingActivationSubset[winners])*self._inhibitionFactor
-    thresholdCutoff = numpy.searchsorted(poolingActivationSubset[sortedActivations], threshold)
-    stimulusCutoff = numpy.searchsorted(poolingActivationSubset[sortedActivations], self._stimulusThreshold)
-    cutoff = max(thresholdCutoff, stimulusCutoff)
-    topCells = potentialUnionSDR[sortedActivations[cutoff:][::-1]]
+    start = max(0, len(potentialUnionSDR) - self._maxUnionCells)
+    topCells = potentialUnionSDR[start:]
+    threshold = numpy.mean(poolingActivation[topCells])
+    thresholdCutoff = numpy.searchsorted(sortedActivations, threshold, side="right")
+    stimulusCutoff = numpy.searchsorted(sortedActivations, self._stimulusThreshold, side="right")
+    cutoff = max(stimulusCutoff, thresholdCutoff)
+    unionSDR = potentialUnionSDR[cutoff:]
 
     if max(self._poolingTimer) > self._minHistory:
-      self._unionSDR = numpy.sort(topCells).astype(UINT_DTYPE)
+      self._unionSDR = numpy.sort(unionSDR).astype(UINT_DTYPE)
     else:
       self._unionSDR = []
 
