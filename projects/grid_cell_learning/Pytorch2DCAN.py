@@ -728,8 +728,8 @@ class GCN2D(object):
         update = (unfoldedActivity)*((self.instantaneous - self.longHistory)/(self.longHistory + 0.001)\
                                     ).view(self.numX*self.numY)
         update = update*self.learningRate*self.dt
-        positive = relu(update)
-        negative = -relu(-update)
+        positive = relu_(update)
+        negative = -relu_(-update)
         self.inhibitoryWeights += positive * self.negativeLearnFactorI + negative
         self.inhibitoryWeights = torch.max(self.inhibitoryWeights, self.zero - 10.)
         self.inhibitoryWeights = torch.min(self.inhibitoryWeights, self.zero)
