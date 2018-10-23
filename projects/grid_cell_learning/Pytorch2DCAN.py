@@ -199,7 +199,7 @@ class GCN2D(object):
 
         self.originalWeights = torch.tensor(self.inhibitoryWeights.cpu().numpy(), device=device, dtype=torch.float)
         if weightNoise is not None:
-            mask = torch.zeros((1, (2*inhibitionWindowX+1)**2, numX*numY), device=device, dtype=torch.float)
+            mask = torch.zeros((1, (2*inhibitionWindowX+1)*(2*inhibitionWindowY+1), numX*numY), device=device, dtype=torch.float)
             mask.uniform_(0, weightNoise)
             self.inhibitoryWeights = mask*self.inhibitoryWeights
 
