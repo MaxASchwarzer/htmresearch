@@ -67,6 +67,7 @@ def train(args):
                     decayConstant=args.decayConstant,
                     negativeLearnFactorP=args.negativeLearnFactorP,
                     negativeLearnFactorE=args.negativeLearnFactorE,
+                    negativeLearnFactorI=args.negativeLearnFactorI,
                     learningRateE=args.learningRate,
                     envelopeWidth=args.envelopeWidth,
                     envelopeFactor=args.envelopeFactor,
@@ -147,6 +148,7 @@ if __name__ == "__main__":
     parser.add_argument('--decayConstant', type=float, default=0.03,)
     parser.add_argument('--negativeLearnFactorP', type=float, default=.9,)
     parser.add_argument('--negativeLearnFactorE', type=float, default=1.2,)
+    parser.add_argument('--negativeLearnFactorI', type=float, default=5.,)
     parser.add_argument('--learningRateE', type=float, default=0,)
     parser.add_argument('--envelopeWidth', type=float, default=32,)
     parser.add_argument('--envelopeFactor', type=float, default=3.5,)
