@@ -195,7 +195,7 @@ class GCN2D(object):
                 else:
                     weight = w_0(dist/inhibitionRadius)*inhibitionStrength
 
-                self.inhibitoryWeights[:, i*(2*inhibitionWindowX+1) + j, :] = weight
+                self.inhibitoryWeights[:, i*(2*inhibitionWindowY+1) + j, :] = weight
 
         self.originalWeights = torch.tensor(self.inhibitoryWeights.cpu().numpy(), device=device, dtype=torch.float)
         if weightNoise is not None:
