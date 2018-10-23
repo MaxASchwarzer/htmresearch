@@ -40,7 +40,8 @@ def train(args):
     if args.load is None:
         GCN = GCN2D(numX=args.numX,
                     numY=args.numY,
-                    inhibitionWindow=args.inhibitionWindow,
+                    inhibitionWindowX=args.inhibitionWindowX,
+                    inhibitionWindowY=args.inhibitionWindowY,
                     inhibitionRadius=args.inhibitionRadius,
                     inhibitionStrength=args.inhibitionStrength,
                     excitationWindow=args.excitationWindow,
@@ -87,7 +88,7 @@ def train(args):
 
 
     for i in range(args.iters):
-        print(i)
+        print("Iteration {}".format(i))
         GCN.staticLearning(args.length,
                             logFreq=100000,
                             startFrom = args.warmup)
@@ -117,7 +118,8 @@ if __name__ == "__main__":
 
     parser.add_argument('--numX',type=int, default=256,)
     parser.add_argument('--numY',type=int, default=64,)
-    parser.add_argument('--inhibitionWindow',type=int, default=100,)
+    parser.add_argument('--inhibitionWindowX',type=int, default=100,)
+    parser.add_argument('--inhibitionWindowY',type=int, default=32,)
     parser.add_argument('--inhibitionRadius',type=float, default=.75,)
     parser.add_argument('--inhibitionStrength',type=float, default=450.,)
     parser.add_argument('--excitationWindow',type=int, default=3,)

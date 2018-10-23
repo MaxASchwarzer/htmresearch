@@ -111,7 +111,8 @@ class GCN2D(object):
     def __init__(self,
                  numX,
                  numY,
-                 inhibitionWindow,
+                 inhibitionWindowX,
+                 inhibitionWindowY,
                  inhibitionRadius,
                  inhibitionStrength,
                  excitationWindow,
@@ -157,7 +158,7 @@ class GCN2D(object):
 
         self.activity = torch.zeros([1, 1, numX, numY], device=device, dtype=torch.float)
         self.inhibitoryWeights = torch.zeros(1,
-                                             (2*inhibitionWindow+1)*(2*inhibitionWindow+1),
+                                             (2*inhibitionWindowX+1)*(2*inhibitionWindowY+1),
                                               numX*numY,
                                               device=device, dtype=torch.float)
 
@@ -181,10 +182,10 @@ class GCN2D(object):
         self.placeMean = placeMean
         self.envSize=envSize
 
-        for i in range(1+2*inhibitionWindow):
-            for j in range(1+2*inhibitionWindow):
-                xComp = np.abs(i - (inhibitionWindow))
-                yComp = np.abs(j - (inhibitionWindow))
+        for i in range(1+2*inhibitionWindowX):
+            for j in range(1+2*inhibitionWindowY):
+                xComp = np.abs(i - (inhibitionWindowX))
+                yComp = np.abs(j - (inhibitionWindowY))
                 dist = np.asarray((xComp, yComp))
                 dist = dist[0] ** 2 + dist[1] ** 2
 
@@ -194,11 +195,11 @@ class GCN2D(object):
                 else:
                     weight = w_0(dist/inhibitionRadius)*inhibitionStrength
 
-                self.inhibitoryWeights[:, i*(2*inhibitionWindow+1) + j, :] = weight
+                self.inhibitoryWeights[:, i*(2*inhibitionWindowX+1) + j, :] = weight
 
         self.originalWeights = torch.tensor(self.inhibitoryWeights.cpu().numpy(), device=device, dtype=torch.float)
         if weightNoise is not None:
-            mask = torch.zeros((1, (2*inhibitionWindow+1)**2, numX*numY), device=device, dtype=torch.float)
+            mask = torch.zeros((1, (2*inhibitionWindowX+1)**2, numX*numY), device=device, dtype=torch.float)
             mask.uniform_(0, weightNoise)
             self.inhibitoryWeights = mask*self.inhibitoryWeights
 
@@ -217,7 +218,7 @@ class GCN2D(object):
                                       for k in self.directions.keys())
 
         self.excitatoryKernel = ((2*excitationWindow+1), (2*excitationWindow+1))
-        self.inhibitoryKernel = ((2*inhibitionWindow+1), (2*inhibitionWindow+1))
+        self.inhibitoryKernel = ((2*inhibitionWindowX+1), (2*inhibitionWindowY+1))
         self.bias=torch.zeros((1,self.numX,self.numY), device=device, dtype=torch.float) # outC x outH x outW
 
         self.localConv=localConv.apply
@@ -263,7 +264,8 @@ class GCN2D(object):
                                        device=device, dtype=torch.float)
         self.dt = dt
         self.decay = decayConstant
-        self.inhibitionWindow = inhibitionWindow
+        self.inhibitionWindowX = inhibitionWindowX
+        self.inhibitionWindowY = inhibitionWindowY
         self.excitationWindow = excitationWindow
         self.envelopeWidth = envelopeWidth
         self.envelopeFactor = envelopeFactor
