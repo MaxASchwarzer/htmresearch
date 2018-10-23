@@ -482,6 +482,9 @@ class GCN2D(object):
                 self.covarianceInhibitoryUpdate()
                 self.decayInhibitoryWeights()
 
+                if t % int(1/self.dt) == 0:
+                    print("Second {}".format(t*self.dt))
+
                 if t % logFreq == 0:
                     print("At {}".format(t*self.dt))
                     output[s].copy_(self.activity.view(self.numX))

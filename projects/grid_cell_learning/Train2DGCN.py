@@ -93,7 +93,9 @@ def train(args):
                             logFreq=100000,
                             startFrom = args.warmup)
 
-    results = GCN.simulate(200, logFreq=1, startFrom = 0, vel = (0, 0))
+    results = GCN.simulate(25, logFreq=1, startFrom = 0, vel = (0, 0))
+
+    pkl.dump(args.save+"_results.pkl", results)
 
     video = createMovie(results,
                         args.save + ".mp4",
@@ -104,9 +106,9 @@ def train(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--length', type=int, default=200,
+    parser.add_argument('--length', type=int, default=120,
                         help='Training time (s) per iteration')
-    parser.add_argument('--warmup', type=int, default=100,
+    parser.add_argument('--warmup', type=int, default=20,
                         help='Warmup time (s) per iteration')
     parser.add_argument('--iters', type=int, default=25,
                         help='Number of iterations')
