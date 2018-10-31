@@ -95,13 +95,15 @@ def train(args):
 
     results = GCN.simulate(25, logFreq=1, startFrom = 0, vel = (0, 0))
 
-    pkl.dump(args.save+"_results.pkl", results)
+    with open(args.save + "_results.pkl", "wb") as f:
+        pkl.dump(results, f)
 
     video = createMovie(results,
                         args.save + ".mp4",
                         interval=args.videoFrameLength)
 
-    pkl.dump(args.save+".pkl", GCN)
+    with open(args.save + ".pkl", "wb") as f:
+        pkl.dump(GCN, f)
 
 
 if __name__ == "__main__":
