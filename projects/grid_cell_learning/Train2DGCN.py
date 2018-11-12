@@ -63,7 +63,7 @@ def train(args):
                     decayGradientX=args.decayGradientX,
                     tonicGradientX=args.tonicGradientX,
                     inhibitionGradientX=args.inhibitionGradientX,
-                    weightDecay=args.weightDecay,
+                    inhibitoryWeightDecay=args.inhibitoryWeightDecay,
                     decayConstant=args.decayConstant,
                     negativeLearnFactorP=args.negativeLearnFactorP,
                     negativeLearnFactorE=args.negativeLearnFactorE,
@@ -144,7 +144,7 @@ if __name__ == "__main__":
     parser.add_argument('--decayGradientX', type=float, default=30.,)
     parser.add_argument('--tonicGradientX', type=float, default=1.,)
     parser.add_argument('--inhibitionGradientX', type=float, default=1.,)
-    parser.add_argument('--weightDecay', type=float, default=5000,)
+    parser.add_argument('--inhibitoryWeightDecay', type=float, default=5000,)
     parser.add_argument('--decayConstant', type=float, default=0.03,)
     parser.add_argument('--negativeLearnFactorP', type=float, default=.9,)
     parser.add_argument('--negativeLearnFactorE', type=float, default=1.2,)

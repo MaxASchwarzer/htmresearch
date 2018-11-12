@@ -480,10 +480,10 @@ class GCN2D(object):
 
             if t*self.dt >= startFrom:
                 self.covarianceInhibitoryUpdate()
-                self.decayInhibitoryWeights()
+                self.decayInhibitoryWeights(toPattern=True)
 
                 if t % int(1/self.dt) == 0:
-                    print("Second {}".format(t*self.dt))
+                    print("Second {}".format(int(t*self.dt)))
 
                 if t % logFreq == 0:
                     print("At {}".format(t*self.dt))
