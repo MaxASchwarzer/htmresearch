@@ -734,6 +734,6 @@ class GCN2D(object):
         positive = relu_(update)
         negative = -relu_(-update)
         self.inhibitoryWeights += positive * self.negativeLearnFactorI + negative
-        self.inhibitoryWeights = torch.max(self.inhibitoryWeights, self.zero - 10.)
+        self.inhibitoryWeights = torch.max(self.inhibitoryWeights, self.zero - 20.)
         self.inhibitoryWeights = torch.min(self.inhibitoryWeights, self.zero)
         return(update)

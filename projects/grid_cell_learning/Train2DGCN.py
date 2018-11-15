@@ -109,9 +109,9 @@ def train(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--length', type=int, default=120,
+    parser.add_argument('--length', type=int, default=200,
                         help='Training time (s) per iteration')
-    parser.add_argument('--warmup', type=int, default=20,
+    parser.add_argument('--warmup', type=int, default=50,
                         help='Warmup time (s) per iteration')
     parser.add_argument('--iters', type=int, default=25,
                         help='Number of iterations')
