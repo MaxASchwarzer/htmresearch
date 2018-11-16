@@ -99,10 +99,6 @@ def train(args):
     with open(args.save + "_results.pkl", "wb") as f:
         pkl.dump(results, f)
 
-    video = createMovie(results,
-                        args.save + ".mp4",
-                        interval=args.videoFrameLength)
-
     with open(args.save + ".pkl", "wb") as f:
         pkl.dump(GCN, f)
 
