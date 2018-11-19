@@ -49,6 +49,7 @@ def train(args):
                     excitationCenterBlock=args.excitationCenterBlock,
                     globalTonic=args.globalTonic,
                     stdpWindow=args.stdpWindow,
+                    activityMeanAlpha=args.activityMeanAlpha,
                     dt=args.dt,
                     placeMax=args.placeMax,
                     placeMean=args.placeMean,
@@ -133,6 +134,7 @@ if __name__ == "__main__":
     parser.add_argument('--placeMean', type=float, default=.25,)
     parser.add_argument('--boostEffect', type=float, default=10.,)
     parser.add_argument('--boostDecay', type=float, default=.1,)
+    parser.add_argument('--activityMeanAlpha', type=float, default=.1,)
     parser.add_argument('--numPlaces', type=int, default=1000,)
     parser.add_argument('--circularPlaces', action='store_true')
     parser.add_argument('--learningRate', type=float, default=.01,)
