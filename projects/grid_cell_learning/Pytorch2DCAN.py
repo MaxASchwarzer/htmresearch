@@ -1,5 +1,5 @@
 import torch
-from torch.nn.functional import conv2d, relu_, unfold, fold
+from torch.nn.functional import conv2d, relu, relu_, unfold, fold
 localConv=torch.nn.backends.thnn.backend.SpatialConvolutionLocal
 if torch.cuda.is_available():
     device = torch.device('cuda')
@@ -731,8 +731,8 @@ class GCN2D(object):
         update = (unfoldedActivity)*((self.instantaneous - self.longHistory)/(self.longHistory + 0.001)\
                                     ).view(self.numX*self.numY)
         update = update*self.learningRate*self.dt
-        positive = relu_(update)
-        negative = -relu_(-update)
+        positive = relu(update)
+        negative = -relu(-update)
         self.inhibitoryWeights += positive * self.negativeLearnFactorI + negative
         self.inhibitoryWeights = torch.max(self.inhibitoryWeights, self.zero - 20.)
         self.inhibitoryWeights = torch.min(self.inhibitoryWeights, self.zero)
