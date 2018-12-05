@@ -158,7 +158,7 @@ if __name__ == "__main__":
     parser.add_argument('--hardwireERange', type=float, default=.05,)
     parser.add_argument('--hardwireEOffset', type=float, default=2.,)
     parser.add_argument('--excitationGradientX', type=float, default=10.,)
-    parser.add_argument('--gradientType', type=float, default=.7,)
+    parser.add_argument('--gradientType', type=str, default="exponential",)
     parser.add_argument('--envSize', type=float, default=.5,)
     parser.add_argument('--weightNoise', type=float, default=2.)
     parser.add_argument('--lesions', type=int, default=0)
